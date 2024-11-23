@@ -5,8 +5,8 @@ import sys
 pygame.init()
 Vec = pygame.math.Vector2  # 2 for two dimensional
 
-HEIGHT = 400  # Screen height
-WIDTH = 300  # Screen width
+HEIGHT = 600  # Screen height
+WIDTH = 800  # Screen width
 ACC = 0.5  # Impact of user's keyboard on the acceleration
 FRIC_X = -0.12  # Air resistance
 FRIC_Y = -0.01
@@ -76,6 +76,13 @@ class Platform(pygame.sprite.Sprite):
     def update_ui(self):
         pass
 
+class Images(pygame.sprite.Sprite): 
+    def __init__(self, picture, Xpos, Ypos, width, height):
+        pygame.sprite.Sprite.__init__(self)
+        self.image = pygame.image.load(picture).convert_alpha()
+        self.image= pygame.transform.scale(self.image, (width, height))
+        self.rect = self.image.get_rect(topleft = (Xpos, Ypos))
+
 def main():
     plat1 = Platform(WIDTH, 30, WIDTH * 0.5, HEIGHT - 15)
     plat2 = Platform(WIDTH / 2, 50, WIDTH * 0.75, HEIGHT - 70)
@@ -93,13 +100,15 @@ def main():
     clock = pygame.time.Clock()
     FPS = 60
 
+    Map = Images('Assets\MenuScreen.png', 0, 0, 800, 600)
+    
     while True:
         for event in pygame.event.get():
             if event.type == QUIT:
                 pygame.quit()
                 sys.exit()
 
-        background_surface.fill((0, 0, 0))
+        background_surface.blit(Map.image, Map.rect)
 
         player.physics()
 
