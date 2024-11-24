@@ -94,6 +94,8 @@ class Player(Images):
         self.left_boundary = self.width / 2
 
         self.reset()
+        # Workaround as Images use topleft
+        self.rect = self.image.get_rect(midbottom=self.initial_pos)
 
     def reset(self):
         super().reset()
@@ -118,10 +120,11 @@ class Player(Images):
                     on_platform_rect = plat_rect
                     platform_resistance_factor = obstacle.resistance_factor
                 # Collision from left/right
-                if plat_rect.collidepoint(hitbox.midright):
-                    max_x = plat_rect.x - self.width / 2
-                if plat_rect.collidepoint(hitbox.midleft):
-                    min_x = plat_rect.x + self.width / 2
+                else:
+                    if plat_rect.clipline(hitbox.topright, hitbox.bottomright):
+                        max_x = plat_rect.left - self.width / 2
+                    if plat_rect.clipline(hitbox.topleft, hitbox.bottomleft):
+                        min_x = plat_rect.right + self.width / 2
 
         self.acc = Vec(0, 0)
         pressed_keys = pygame.key.get_pressed()
