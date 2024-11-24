@@ -14,7 +14,7 @@ ACC = 0.5  # Impact of user's keyboard on the acceleration
 FRIC_X = -0.09  # Air resistance
 FRIC_Y = -0.01
 
-class Images(pygame.sprite.Sprite): 
+class Images(pygame.sprite.Sprite):
     def __init__(self, picture, Xpos, Ypos, width, height):
         pygame.sprite.Sprite.__init__(self)
         self.image = pygame.image.load(picture)
@@ -50,12 +50,11 @@ class TextElements():
         self.colour = colour
         self.xpos = xpos
         self.ypos = ypos
-        
+
         self.font = pygame.font.Font(font, size)
         self.text = self.font.render(self.words, True, colour)
         self.rect = self.text.get_rect(center=(xpos, ypos))
-    #endmethod
-    
+
     def update(self, screen):
         self.text = self.font.render(self.words, True, self.colour)
         self.rect = self.text.get_rect(center=(self.xpos, self.ypos))
@@ -79,7 +78,7 @@ class Player(Images):
     def physics(self):
         on_platform_rect = None
         min_x = max_x = None
-        cement_factor = 1.0
+        platform_resistance_factor = 1.0
         hitbox = self.rect.move(0, 1)
         for platform in self.platforms:
             plat_rect: pygame.Rect = platform.rect
@@ -87,8 +86,7 @@ class Player(Images):
                 # Collision from top
                 if plat_rect.collidepoint(hitbox.midbottom):
                     on_platform_rect = plat_rect
-                    if isinstance(platform, CementPlatform):
-                        cement_factor = platform.resistance_factor
+                    platform_resistance_factor = platform.resistance_factor
                 # Collision from left/right
                 if plat_rect.collidepoint(hitbox.midright):
                     max_x = plat_rect.x - self.width / 2
@@ -119,7 +117,7 @@ class Player(Images):
 
         # Compute resistance
         resistance = Vec(FRIC_X, FRIC_Y)
-        resistance.x *= cement_factor
+        resistance.x *= platform_resistance_factor
 
         self.acc.x += self.vel.x * resistance.x
         self.acc.y += self.vel.y * resistance.y
@@ -156,15 +154,15 @@ class Shadow(Images):
             self.rect.midbottom = self.past_pos.popleft()
         return super().blit(background_surface, camera_x_offset)
 
-class Platform(Images):
-    pass
+class Platform(ImageHorizontalTile):
+    resistance_factor = 1.0
 
-class NormalPlatform(ImageHorizontalTile):
+class NormalPlatform(Platform):
     def __init__(self, width, height, x, y):
         # TODO change the image
         super().__init__("images/Cement.png", x, y, width, height)
 
-class CementPlatform(ImageHorizontalTile):
+class CementPlatform(Platform):
     resistance_factor = 1.5
 
     def __init__(self, width, height, x, y):
@@ -190,7 +188,7 @@ def main():
     FPS = 60
 
     Map = Images('images/GameScreen.png', 0, 0, 800, 600)
-    
+
     while True:
         for event in pygame.event.get():
             if event.type == QUIT:
@@ -220,15 +218,13 @@ def Menu():
     clock = pygame.time.Clock()
     FPS = 60
 
-    Map = Images('Assets/MenuScreen.png', 0, 0, 800, 600)
-    playbutton = TextElements('Assets/Bauhaus93.ttf',40, (255,255,255),"Press Space to Play",400,250)
-    NameGame = TextElements('Assets/Bauhaus93.ttf',60, (255,255,255),"Game Name",400,150)
+    Map = Images('images/MenuScreen.png', 0, 0, 800, 600)
+    playbutton = TextElements('images/Bauhaus93.ttf',40, (255,255,255),"Press Space to Play",400,250)
+    NameGame = TextElements('images/Bauhaus93.ttf',60, (255,255,255),"Game Name",400,150)
     rectangle = pygame.Rect(350, 300,600,60)
     rectangle.center = (400,250)
 
     while True:
-        
-        mousepos = pygame.mouse.get_pos()
         for event in pygame.event.get():
             if event.type == QUIT:
                 pygame.quit()
@@ -248,4 +244,3 @@ def Menu():
         clock.tick(FPS)
 
 Menu()
-#main()
