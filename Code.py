@@ -345,7 +345,7 @@ class Game:
     def __init__(self, levels):
         self.levels = levels
         self.level_id = 0
-        self.title = "GAME NAME"
+        self.title = "Nighttime Chase"
 
     def run_level(self, level: Level):
         if level.dirty:
