@@ -211,8 +211,7 @@ class Platform(ImageHorizontalTile):
 
 class NormalPlatform(Platform):
     def __init__(self, width, height, x, y):
-        # TODO change the image
-        super().__init__("images/Cement.png", x, y, width, height)
+        super().__init__("images/Platform.png", x, y, width, height)
 
 class CementPlatform(Platform):
     resistance_factor = 1.5
@@ -221,11 +220,10 @@ class CementPlatform(Platform):
         super().__init__("images/Cement.png", x, y, width, height)
 
 class IcePlatform(Platform):
-    resistance_factor = 0.75
+    resistance_factor = 0.5
 
     def __init__(self, width, height, x, y):
-        # TODO change the image
-        super().__init__("images/Cement.png", x, y, width, height)
+        super().__init__("images/Ice.png", x, y, width, height)
 
 class Key(Images):
     def __init__(self, x, y):
@@ -261,8 +259,7 @@ class Door(Images):
 
 class Goal(Images):
     def __init__(self, x, y):
-        # TODO change image
-        super().__init__("images/ClimbRope.png", x, y, 50, 50)
+        super().__init__("images/GoalFlag.png", x, y, 50, 50)
 
 class Level:
     def __init__(
