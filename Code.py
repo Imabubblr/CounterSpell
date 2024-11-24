@@ -18,10 +18,10 @@ FRIC_Y = -0.01
 BULLET_FREEZE = 60  # frames
 BULLET_SPEED = 12  # pixels/frame
 
-jumpsound = pygame.mixer.Sound("images\Jump.mp3")
-hitsound = pygame.mixer.Sound("images\HitSound.mp3")
-GameOverSound = pygame.mixer.Sound("images\GameOver.mp3")
-GameWinSound = pygame.mixer.Sound("images\LevelCompleteSound.mp3")
+jumpsound = pygame.mixer.Sound("images/Jump.mp3")
+hitsound = pygame.mixer.Sound("images/HitSound.mp3")
+GameOverSound = pygame.mixer.Sound("images/GameOver.mp3")
+GameWinSound = pygame.mixer.Sound("images/LevelCompleteSound.mp3")
 
 class Images(pygame.sprite.Sprite):
     _img_cache = {}
