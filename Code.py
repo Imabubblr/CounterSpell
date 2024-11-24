@@ -607,13 +607,13 @@ Level_2 = Level(
 Level_3 = Level(
     "LEVEL 3",
     (
-        NormalPlatform(300, 30, 0, HEIGHT - 30),
+        NormalPlatform(300, 30, 0, HEIGHT - 31),
         IcePlatform(300, 30, 300, HEIGHT - 30),
-        IcePlatform(500, 30, 1000, HEIGHT - 30),
-        IcePlatform(500, 30, 1750, HEIGHT - 130),
-        IcePlatform(500, 30, 1000, HEIGHT - 230),
-        IcePlatform(500, 30, 1750, HEIGHT - 330),
-        NormalPlatform(350, 30, 2850, HEIGHT - 30),
+        IcePlatform(500, 30, 950, HEIGHT - 30),
+        IcePlatform(500, 30, 1670, HEIGHT - 120),
+        IcePlatform(500, 30, 950, HEIGHT - 210),
+        IcePlatform(500, 30, 1670, HEIGHT - 300),
+        NormalPlatform(550, 30, 2750, HEIGHT - 30),
     ),
     3200,
     50, 450,
@@ -626,16 +626,16 @@ Level_3 = Level(
 Level_4 = Level(
     "LEVEL 4",
     (
-        NormalPlatform(500, 30, 0, HEIGHT - 30),
+        NormalPlatform(500, 30, 0, HEIGHT - 31),
         NormalPlatform(300, 30, 0, HEIGHT - 330),
         NormalPlatform(300, 30, 800, HEIGHT - 30),
-        NormalPlatform(300, 30, 1300, HEIGHT - 130),
-        NormalPlatform(300, 30, 1800, HEIGHT - 230),
-        NormalPlatform(300, 30, 2300, HEIGHT - 330),
-        NormalPlatform(300, 30, 1800, HEIGHT - 430),
-        NormalPlatform(300, 30, 1300, HEIGHT - 430),
-        NormalPlatform(300, 30, 800, HEIGHT - 430),
-        NormalPlatform(200, 30, 500, HEIGHT - 330),
+        NormalPlatform(300, 30, 1300, HEIGHT - 110),
+        NormalPlatform(300, 30, 1800, HEIGHT - 190),
+        NormalPlatform(300, 30, 2300, HEIGHT - 270),
+        NormalPlatform(300, 30, 1800, HEIGHT - 350),
+        NormalPlatform(300, 30, 1300, HEIGHT - 350),
+        NormalPlatform(300, 30, 800, HEIGHT - 350),
+        NormalPlatform(200, 30, 500, HEIGHT - 270),
         NormalPlatform(350, 30, 2850, HEIGHT - 30),
     ),
     3200,
@@ -644,26 +644,26 @@ Level_4 = Level(
     100,
     3,
     (
-        (Key(100, HEIGHT - 380), Door(3000, HEIGHT - 180)),
+        (Key(100, HEIGHT - 380), Door(3010, HEIGHT - 180)),
     )
 )
 
 Level_5 = Level(
     "LEVEL 5",
     (
-        NormalPlatform(300, 30, 0, HEIGHT - 30),
+        NormalPlatform(300, 30, 0, HEIGHT - 31),
         CementPlatform(300, 30, 300, HEIGHT - 30),
-        NormalPlatform(300, 30, 000, HEIGHT - 330),
-        NormalPlatform(200, 30, 790, HEIGHT - 130),
-        IcePlatform(100, 30, 1200, HEIGHT - 230),
-        IcePlatform(200, 30, 750, HEIGHT - 330),
-        CementPlatform(200, 30, 550, HEIGHT - 330),
-        IcePlatform(200, 30, 1200, HEIGHT - 430),
-        IcePlatform(200, 30, 1650, HEIGHT - 530),
-        CementPlatform(300, 30, 2500, HEIGHT - 30),
-        CementPlatform(300, 30, 2950, HEIGHT - 130),
-        CementPlatform(300, 30, 3400, HEIGHT - 230),
-        CementPlatform(300, 30, 3850, HEIGHT - 330),
+        NormalPlatform(400, 30, 000, HEIGHT - 270),
+        NormalPlatform(200, 30, 790, HEIGHT - 110),
+        IcePlatform(100, 30, 1200, HEIGHT - 190),
+        IcePlatform(200, 30, 750, HEIGHT - 270),
+        CementPlatform(200, 30, 550, HEIGHT - 270),
+        IcePlatform(200, 30, 1200, HEIGHT - 350),
+        IcePlatform(200, 30, 1650, HEIGHT - 420),
+        CementPlatform(300, 30, 2450, HEIGHT - 30),
+        CementPlatform(300, 30, 2900, HEIGHT - 110),
+        CementPlatform(300, 30, 3350, HEIGHT - 190),
+        CementPlatform(300, 30, 3800, HEIGHT - 270),
         NormalPlatform(400, 30, 4600, HEIGHT - 30),
     ),
     5000,
@@ -676,6 +676,5 @@ Level_5 = Level(
     )
 )
 Game((
-    # Level_1,
-    Level_2, Level_3, Level_4, Level_5
+    Level_1, Level_2, Level_3,Level_4, Level_5
 )).main()
