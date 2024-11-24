@@ -3,6 +3,7 @@ from pygame.locals import *
 import sys
 from collections import deque
 from typing import NamedTuple
+from itertools import chain
 
 pygame.init()
 
@@ -13,6 +14,8 @@ WIDTH = 800  # Screen width
 ACC = 0.5  # Impact of user's keyboard on the acceleration
 FRIC_X = -0.09  # Air resistance
 FRIC_Y = -0.01
+BULLET_FREEZE = 40  # frames
+BULLET_SPEED = 12  # pixels/frame
 
 class Images(pygame.sprite.Sprite):
     _img_cache = {}
@@ -84,6 +87,8 @@ class Player(Images):
         super().__init__("images/Player.png", x, y, self.width, self.height)
         self.obstacles = []
         self.turning_left = False
+        self.initial_shoot_cd = 120
+        self.shoot_cd = 0
 
         self.right_boundary = self.map_width - self.width / 2
         self.left_boundary = self.width / 2
@@ -129,10 +134,15 @@ class Player(Images):
             self.turning_left = False
             self.reset_texture('images/Player.png')
         if (
-            (pressed_keys[K_w] or pressed_keys[K_UP] or pressed_keys[K_SPACE])
+            (pressed_keys[K_w] or pressed_keys[K_UP])
             and on_platform_rect is not None
         ):
             self.acc.y = -7  # Up
+        self.shooting = False
+        if pressed_keys[K_SPACE] and self.shoot_cd <= 0:
+            self.shooting = True
+            self.shoot_cd = self.initial_shoot_cd
+        self.shoot_cd -= 1
 
         # Gravity
         if on_platform_rect is None:
@@ -171,6 +181,12 @@ class Player(Images):
     def is_in_void(self) -> bool:
         return self.pos.y > HEIGHT
 
+class Bullet(Images):
+    def __init__(self, x, y, to_x, to_y):
+        # TODO change image
+        super().__init__("images/ClimbRope.png", x, y, 20, 20)
+        self.vel = Vec(to_x - x, to_y - y).normalize() * BULLET_SPEED
+
 class MovementRecord(NamedTuple):
     pos: Vec
     left: bool
@@ -182,6 +198,7 @@ class Shadow(Images):
         self.initial_countdown = countdown
         self.reset()
         self.turning_left = False
+        self.all_bullets = []
 
     def reset(self):
         super().reset()
@@ -195,6 +212,10 @@ class Shadow(Images):
             self.player.pos.copy(),
             self.player.turning_left
         ))
+        collide_bullet = self.rect.collidelist(self.all_bullets)
+        if collide_bullet != -1:
+            self.all_bullets.pop(collide_bullet)
+            self.countdown = BULLET_FREEZE
 
     def blit(self, background_surface, camera_x_offset):
         if self.countdown <= 0:
@@ -276,6 +297,7 @@ class Level:
         self.name = name
         self.platforms = platforms
         self.map_width = map_width
+        self.game_field = pygame.Rect(0, 0, map_width, HEIGHT)
         self.player = Player(spawn_x, spawn_y, map_width)
         # The shadow is initially outside screen.
         self.shadow = Shadow(-100, 0, shadow_countdown, self.player)
@@ -291,6 +313,7 @@ class Level:
         for platform in platforms:
             self.all_sprites.add(platform)
         self.all_sprites.add(self.player, self.shadow, self.goal)
+        self.all_bullets = self.shadow.all_bullets
         self.add_keys_and_doors()
 
     def add_keys_and_doors(self):
@@ -304,6 +327,7 @@ class Level:
         self.health = self.initial_health
 
     def reset(self):
+        self.all_bullets.clear()
         self.player.reset()
         self.shadow.reset()
         self.add_keys_and_doors()
@@ -317,10 +341,19 @@ class Level:
         # Subroutine loops
         self.player.physics()
         self.shadow.track()
+        bullets_dead = []
+        for i in reversed(range(len(self.all_bullets))):
+            bullet: Bullet = self.all_bullets[i]
+            bullet.rect.move_ip(*bullet.vel)
+            if not bullet.rect.colliderect(self.game_field):
+                bullets_dead.append(i)
+        for i in bullets_dead:
+            self.all_bullets.pop(i)
         # Camera
         camera_x_offset = min(max(0, self.player.pos.x - WIDTH / 2),
                               self.map_width - WIDTH)
-        for entity in self.all_sprites:
+        # Render everything
+        for entity in chain(self.all_sprites, self.all_bullets):
             entity.blit(background_surface, camera_x_offset)
         # Check if key is picked up
         for key, door in self.key_door_pairs:
@@ -338,6 +371,14 @@ class Level:
         # Check if player won
         if self.player.rect.colliderect(self.goal.rect):
             self.won = True
+        # Check if player pressed shoot button
+        if self.player.shooting:
+            mouse_pos = pygame.mouse.get_pos()
+            player_pos = self.player.rect.center
+            self.all_bullets.append(Bullet(
+                *player_pos,
+                mouse_pos[0] + camera_x_offset, mouse_pos[1]
+            ))
 
 class Game:
     def __init__(self, levels):
