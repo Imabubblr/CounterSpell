@@ -14,12 +14,24 @@ FRIC_X = -0.09  # Air resistance
 FRIC_Y = -0.01
 
 class Images(pygame.sprite.Sprite):
+    _img_cache = {}
+
     def __init__(self, picture, Xpos, Ypos, width, height):
         pygame.sprite.Sprite.__init__(self)
-        self.image = pygame.image.load(picture)
-        self.image = pygame.transform.scale(self.image, (width, height))
+        self.image_size = (width, height)
+        self._my_cache = self._img_cache.setdefault(type(self), {})
+        self.reset_texture(picture)
         self.initial_pos = (Xpos, Ypos)
         self.rect = self.image.get_rect(topleft=self.initial_pos)
+
+    def reset_texture(self, picture):
+        cache_key = (picture, self.image_size)
+        if cache_key in self._my_cache:
+            self.image = self._my_cache[cache_key]
+        else:
+            self._my_cache[cache_key] = self.image = pygame.transform.scale(
+                pygame.image.load(picture), self.image_size
+            )
 
     def reset(self):
         self.rect.topleft = self.initial_pos
@@ -108,12 +120,10 @@ class Player(Images):
         pressed_keys = pygame.key.get_pressed()
         if pressed_keys[K_LEFT] or pressed_keys[K_a]:
             self.acc.x = -ACC
-            self.image = pygame.image.load('images/PlayerLeft.png')
-            self.image = pygame.transform.scale(self.image, (30, 70))
+            self.reset_texture('images/PlayerLeft.png')
         if pressed_keys[K_RIGHT] or pressed_keys[K_d]:
             self.acc.x = ACC
-            self.image = pygame.image.load('images/Player.png')
-            self.image = pygame.transform.scale(self.image, (30, 70))
+            self.reset_texture('images/Player.png')
         if (
             (pressed_keys[K_w] or pressed_keys[K_UP] or pressed_keys[K_SPACE])
             and on_platform_rect is not None
