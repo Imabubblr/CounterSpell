@@ -581,7 +581,7 @@ Level_1 = Level(
 Level_2 = Level(
     "LEVEL 2",
     (
-        NormalPlatform(300, 30, 0, HEIGHT - 30),
+        NormalPlatform(300, 30, 0, HEIGHT - 31),
         CementPlatform(500, 30, 300, HEIGHT - 30),
         CementPlatform(475, 30, 1100, HEIGHT - 30),
         CementPlatform(75, 100, 1300, HEIGHT - 130),
