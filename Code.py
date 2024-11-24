@@ -24,6 +24,25 @@ class Images(pygame.sprite.Sprite):
         new_rect = self.rect.move(-camera_x_offset, 0)
         background_surface.blit(self.image, new_rect)
 
+class ImageHorizontalTile(pygame.sprite.Sprite):
+    def __init__(self, picture, x, y, width, height):
+        super().__init__()
+        img = pygame.image.load(picture)
+        self.image = pygame.transform.scale_by(img, height / img.get_height())
+        self.rect = pygame.Rect(x, y, width, height)
+        self.img_width = self.image.get_width()
+        self.height = height
+
+    def blit(self, background_surface: pygame.Surface, camera_x_offset):
+        new_rect = self.rect.move(-camera_x_offset, 0)
+        r = range(new_rect.x, new_rect.right, self.img_width)
+        for x in r[:-1]:
+            background_surface.blit(self.image, (x, new_rect.y))
+        background_surface.blit(
+            self.image, (r[-1], new_rect.y),
+            (0, 0, new_rect.right - r[-1], self.height)
+        )
+
 class Player(Images):
     def __init__(self, x, y):
         self.width = 30
@@ -122,12 +141,12 @@ class Shadow(Images):
 class Platform(Images):
     pass
 
-class NormalPlatform(Platform):
+class NormalPlatform(ImageHorizontalTile):
     def __init__(self, width, height, x, y):
         # TODO change the image
         super().__init__("images/Cement.png", x, y, width, height)
 
-class CementPlatform(Platform):
+class CementPlatform(ImageHorizontalTile):
     resistance_factor = 1.5
 
     def __init__(self, width, height, x, y):
