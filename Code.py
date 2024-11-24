@@ -382,8 +382,54 @@ class Game:
         pygame.display.set_caption(self.title)
 
     def victory_screen(self):
-        print("You won!")
-        # TODO
+        pygame.display.set_caption(f"{self.title} - You beat the game!!")
+        background_surface = pygame.display.set_mode((WIDTH, HEIGHT))
+        clock = pygame.time.Clock()
+        FPS = 60
+        Map = Images('images/MenuScreen.png', 0, 0, 800, 600)
+        playbutton = TextElements('images/Bauhaus93.ttf',40, (255,255,255),"Press Space to Replay",400,250)
+        NameGame = TextElements('images/Bauhaus93.ttf',60, (255,255,255),"You Win!!",400,150)
+        rectangle = pygame.Rect(350, 300,600,60)
+        rectangle.center = (400,250)
+        while True:
+            for event in pygame.event.get():
+                if event.type == QUIT:
+                    pygame.quit()
+                    sys.exit()
+            pressed_keys = pygame.key.get_pressed()
+            if pressed_keys[K_SPACE]:
+                break
+            background_surface.blit(Map.image, Map.rect)
+            pygame.draw.rect(background_surface,(0,0,0),rectangle)
+            background_surface.blit(playbutton.text, playbutton.rect)
+            background_surface.blit(NameGame.text, NameGame.rect)
+            pygame.display.update()
+            clock.tick(FPS)
+
+    def game_over_screen(self):
+        pygame.display.set_caption(f"{self.title} - Game Over!")
+        background_surface = pygame.display.set_mode((WIDTH, HEIGHT))
+        clock = pygame.time.Clock()
+        FPS = 60
+        Map = Images('images/MenuScreen.png', 0, 0, 800, 600)
+        playbutton = TextElements('images/Bauhaus93.ttf',40, (255,255,255),"Press Space to Replay",400,250)
+        NameGame = TextElements('images/Bauhaus93.ttf',60, (255,255,255),"You Lose",400,150)
+        rectangle = pygame.Rect(350, 300,600,60)
+        rectangle.center = (400,250)
+        while True:
+            for event in pygame.event.get():
+                if event.type == QUIT:
+                    pygame.quit()
+                    sys.exit()
+            pressed_keys = pygame.key.get_pressed()
+            if pressed_keys[K_SPACE]:
+                break
+            background_surface.blit(Map.image, Map.rect)
+            pygame.draw.rect(background_surface,(0,0,0),rectangle)
+            background_surface.blit(playbutton.text, playbutton.rect)
+            background_surface.blit(NameGame.text, NameGame.rect)
+            pygame.display.update()
+            clock.tick(FPS)
 
     def hard_reset(self):
         self.reset_caption()
@@ -410,22 +456,18 @@ class Game:
                 if event.type == QUIT:
                     pygame.quit()
                     sys.exit()
-
-            pressed_keys = pygame.key.get_pressed()
-            if pressed_keys[K_SPACE]:
-                while True:
-                    won = self.run_level(self.levels[self.level_id])
-                    if won:
-                        self.level_id += 1
-                        if self.level_id == len(self.levels):
-                            # Beat the game!
-                            self.victory_screen()
+                if event.type == KEYDOWN and event.key == K_SPACE:
+                    while True:
+                        won = self.run_level(self.levels[self.level_id])
+                        if won:
+                            self.level_id += 1
+                            if self.level_id == len(self.levels):
+                                # Beat the game!
+                                self.victory_screen()
+                                self.hard_reset()
+                        else:
+                            self.game_over_screen()
                             self.hard_reset()
-                            break
-                    else:
-                        self.hard_reset()
-                        break
-
             background_surface.blit(Map.image, Map.rect)
             pygame.draw.rect(background_surface,(0,0,0),rectangle)
             background_surface.blit(playbutton.text, playbutton.rect)
