@@ -4,6 +4,7 @@ import sys
 from collections import deque
 
 pygame.init()
+
 Vec = pygame.math.Vector2  # 2 for two dimensional
 
 HEIGHT = 600  # Screen height
@@ -23,6 +24,23 @@ class Images(pygame.sprite.Sprite):
     def blit(self, background_surface: pygame.Surface, camera_x_offset):
         new_rect = self.rect.move(-camera_x_offset, 0)
         background_surface.blit(self.image, new_rect)
+
+class TextElements():
+    def __init__(self, font, size, colour, text, xpos, ypos):
+        self.words = text
+        self.colour = colour
+        self.xpos = xpos
+        self.ypos = ypos
+        
+        self.font = pygame.font.Font(font, size)
+        self.text = self.font.render(self.words, True, colour)
+        self.rect = self.text.get_rect(center=(xpos, ypos))
+    #endmethod
+    
+    def update(self, screen):
+        self.text = self.font.render(self.words, True, self.colour)
+        self.rect = self.text.get_rect(center=(self.xpos, self.ypos))
+        screen.blit(self.text, self.rect)
 
 class Player(Images):
     def __init__(self, x, y):
@@ -152,8 +170,8 @@ def main():
     clock = pygame.time.Clock()
     FPS = 60
 
-    Map = Images('images/MenuScreen.png', 0, 0, 800, 600)
-
+    Map = Images('images/GameScreen.png', 0, 0, 800, 600)
+    
     while True:
         for event in pygame.event.get():
             if event.type == QUIT:
@@ -175,4 +193,40 @@ def main():
         pygame.display.update()
         clock.tick(FPS)
 
-main()
+def Menu():
+    pygame.font.init()
+    pygame.display.set_caption("Game")
+    background_surface = pygame.display.set_mode((WIDTH, HEIGHT))
+
+    clock = pygame.time.Clock()
+    FPS = 60
+
+    Map = Images('Assets/MenuScreen.png', 0, 0, 800, 600)
+    playbutton = TextElements('Assets/Bauhaus93.ttf',40, (255,255,255),"Press Space to Play",400,250)
+    NameGame = TextElements('Assets/Bauhaus93.ttf',60, (255,255,255),"Game Name",400,150)
+    rectangle = pygame.Rect(350, 300,600,60)
+    rectangle.center = (400,250)
+
+    while True:
+        
+        mousepos = pygame.mouse.get_pos()
+        for event in pygame.event.get():
+            if event.type == QUIT:
+                pygame.quit()
+                sys.exit()
+
+        pressed_keys = pygame.key.get_pressed()
+        if pressed_keys[K_SPACE]:
+            main()
+            break
+
+        background_surface.blit(Map.image, Map.rect)
+        pygame.draw.rect(background_surface,(0,0,0),rectangle)
+        background_surface.blit(playbutton.text, playbutton.rect)
+        background_surface.blit(NameGame.text, NameGame.rect)
+
+        pygame.display.update()
+        clock.tick(FPS)
+
+Menu()
+#main()
