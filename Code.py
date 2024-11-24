@@ -2,6 +2,7 @@ import pygame
 from pygame.locals import *
 import sys
 from collections import deque
+from typing import NamedTuple
 
 pygame.init()
 
@@ -82,6 +83,7 @@ class Player(Images):
         self.map_width = map_width
         super().__init__("images/Player.png", x, y, self.width, self.height)
         self.obstacles = []
+        self.turning_left = False
 
         self.right_boundary = self.map_width - self.width / 2
         self.left_boundary = self.width / 2
@@ -120,9 +122,11 @@ class Player(Images):
         pressed_keys = pygame.key.get_pressed()
         if pressed_keys[K_LEFT] or pressed_keys[K_a]:
             self.acc.x = -ACC
+            self.turning_left = True
             self.reset_texture('images/PlayerLeft.png')
         if pressed_keys[K_RIGHT] or pressed_keys[K_d]:
             self.acc.x = ACC
+            self.turning_left = False
             self.reset_texture('images/Player.png')
         if (
             (pressed_keys[K_w] or pressed_keys[K_UP] or pressed_keys[K_SPACE])
@@ -170,26 +174,39 @@ class Player(Images):
     def is_in_void(self) -> bool:
         return self.pos.y > HEIGHT
 
+class MovementRecord(NamedTuple):
+    pos: Vec
+    left: bool
+
 class Shadow(Images):
     def __init__(self, x, y, countdown: int, player: Player):
         self.player = player
         super().__init__("images/Enemy.png", x, y, player.width, player.height)
         self.initial_countdown = countdown
         self.reset()
+        self.turning_left = False
 
     def reset(self):
         super().reset()
-        self.past_pos = deque()
+        self.past_movements = deque()
         self.countdown = self.initial_countdown
 
     def track(self):
         if self.countdown > 0:
             self.countdown -= 1
-        self.past_pos.append(self.player.pos.copy())
+        self.past_movements.append(MovementRecord(
+            self.player.pos.copy(),
+            self.player.turning_left
+        ))
 
     def blit(self, background_surface, camera_x_offset):
         if self.countdown <= 0:
-            self.rect.midbottom = self.past_pos.popleft()
+            record: MovementRecord = self.past_movements.popleft()
+            self.rect.midbottom = record.pos
+            if record.left:
+                self.reset_texture("images/EnemyLeft.png")
+            else:
+                self.reset_texture("images/Enemy.png")
         return super().blit(background_surface, camera_x_offset)
 
 class Platform(ImageHorizontalTile):
@@ -232,7 +249,7 @@ class Door(Images):
     resistance_factor = 1.0
 
     def __init__(self, x, y):
-        super().__init__("images/ClimbRope.png", x, y, 20, 100)
+        super().__init__("images/LockedDoor.png", x, y, 150, 150)
         self.unlocked = False
 
     def reset(self):
@@ -350,7 +367,7 @@ TEST_LEVEL = Level(
     100,
     3,
     (
-        (Key(1000, HEIGHT - 100), Door(1300, HEIGHT - 100)),
+        (Key(1000, HEIGHT - 100), Door(1300, HEIGHT - 180)),
     )
 )
 
