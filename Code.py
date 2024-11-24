@@ -15,7 +15,7 @@ WIDTH = 800  # Screen width
 ACC = 0.5  # Impact of user's keyboard on the acceleration
 FRIC_X = -0.09  # Air resistance
 FRIC_Y = -0.01
-BULLET_FREEZE = 40  # frames
+BULLET_FREEZE = 60  # frames
 BULLET_SPEED = 12  # pixels/frame
 
 jumpsound = pygame.mixer.Sound("images\Jump.mp3")
@@ -94,7 +94,7 @@ class Player(Images):
         self.obstacles = []
         self.turning_left = False
         self.initial_shoot_cd = 120
-        self.shoot_cd = 0
+        self.shoot_cd = 30
 
         self.right_boundary = self.map_width - self.width / 2
         self.left_boundary = self.width / 2
@@ -193,7 +193,6 @@ class Player(Images):
 
 class Bullet(Images):
     def __init__(self, x, y, to_x, to_y):
-        # TODO change image
         super().__init__("images/Bullet.png", x, y, 20, 20)
         self.vel = Vec(to_x - x, to_y - y).normalize() * BULLET_SPEED
 
