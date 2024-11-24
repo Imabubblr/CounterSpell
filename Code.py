@@ -194,7 +194,7 @@ class Player(Images):
 class Bullet(Images):
     def __init__(self, x, y, to_x, to_y):
         # TODO change image
-        super().__init__("images/GoalFlag.png", x, y, 20, 20)
+        super().__init__("images/Bullet.png", x, y, 20, 20)
         self.vel = Vec(to_x - x, to_y - y).normalize() * BULLET_SPEED
 
 class MovementRecord(NamedTuple):
