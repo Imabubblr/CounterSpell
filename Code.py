@@ -18,7 +18,11 @@ class Images(pygame.sprite.Sprite):
         pygame.sprite.Sprite.__init__(self)
         self.image = pygame.image.load(picture)
         self.image = pygame.transform.scale(self.image, (width, height))
-        self.rect = self.image.get_rect(topleft = (Xpos, Ypos))
+        self.initial_pos = (Xpos, Ypos)
+        self.rect = self.image.get_rect(topleft=self.initial_pos)
+
+    def reset(self):
+        self.rect.topleft = self.initial_pos
 
     def blit(self, background_surface: pygame.Surface, camera_x_offset):
         new_rect = self.rect.move(-camera_x_offset, 0)
@@ -67,12 +71,16 @@ class Player(Images):
         super().__init__("images/Player.png", x, y, self.width, self.height)
         self.platforms = []
 
-        self.pos = Vec((x, y))
-        self.vel = Vec(0, 0)
-        self.acc = Vec(0, 0)
-
         self.right_boundary = self.map_width - self.width / 2
         self.left_boundary = self.width / 2
+
+        self.reset()
+
+    def reset(self):
+        super().reset()
+        self.pos = Vec(self.initial_pos)
+        self.vel = Vec(0, 0)
+        self.acc = Vec(0, 0)
 
     def blit(self, background_surface, camera_x_offset):
         self.rect.midbottom = self.pos
@@ -139,12 +147,20 @@ class Player(Images):
         if max_x is not None:
             self.pos[0] = min(max_x, self.pos[0])
 
+    def check_collision_with_shadow(self, shadow_rect) -> bool:
+        return self.rect.colliderect(shadow_rect)
+
 class Shadow(Images):
     def __init__(self, x, y, countdown: int, player: Player):
         self.player = player
         super().__init__("images/Enemy.png", x, y, player.width, player.height)
+        self.initial_countdown = countdown
+        self.reset()
+
+    def reset(self):
+        super().reset()
         self.past_pos = deque()
-        self.countdown = countdown
+        self.countdown = self.initial_countdown
 
     def track(self):
         if self.countdown > 0:
@@ -200,6 +216,10 @@ class Level:
         self.all_sprites.add(self.player)
         self.all_sprites.add(self.shadow)
 
+    def reset(self):
+        self.player.reset()
+        self.shadow.reset()
+
     def tick(self, background_surface):
         # Subroutine loops
         self.player.physics()
@@ -209,6 +229,9 @@ class Level:
                               self.map_width - WIDTH)
         for entity in self.all_sprites:
             entity.blit(background_surface, camera_x_offset)
+        # Check player's collision with the shadow
+        if self.player.check_collision_with_shadow(self.shadow.rect):
+            self.reset()
 
 def main(level: Level):
     pygame.display.set_caption(f"Game - {level.name}")
