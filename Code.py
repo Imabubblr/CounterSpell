@@ -6,7 +6,7 @@ from typing import NamedTuple
 from itertools import chain
 
 pygame.init()
-pygame.mixer.init
+pygame.mixer.init()
 
 Vec = pygame.math.Vector2  # 2 for two dimensional
 
@@ -194,7 +194,7 @@ class Player(Images):
 class Bullet(Images):
     def __init__(self, x, y, to_x, to_y):
         # TODO change image
-        super().__init__("images/ClimbRope.png", x, y, 20, 20)
+        super().__init__("images/GoalFlag.png", x, y, 20, 20)
         self.vel = Vec(to_x - x, to_y - y).normalize() * BULLET_SPEED
 
 class MovementRecord(NamedTuple):
@@ -401,9 +401,7 @@ class Game:
         if level.dirty:
             level.hard_reset()
         level.dirty = True
-        pygame.display.set_caption(
-            f"{self.title} - Level {self.level_id + 1}. {level.name}"
-        )
+        pygame.display.set_caption(f"{self.title} - {level.name}")
         background_surface = pygame.display.set_mode((WIDTH, HEIGHT))
         clock = pygame.time.Clock()
         FPS = 60
@@ -428,7 +426,7 @@ class Game:
             clock.tick(FPS)
 
             if level.health <= 0:
-                pygame.mixxer.Sound.play(GameOverSound)
+                pygame.mixer.Sound.play(GameOverSound)
                 return False
             if level.won:
                 pygame.mixer.Sound.play(GameWinSound)
