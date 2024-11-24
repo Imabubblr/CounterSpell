@@ -99,7 +99,7 @@ class Player(Images):
             self.acc.x = -ACC
         if pressed_keys[K_RIGHT] or pressed_keys[K_d]:
             self.acc.x = ACC
-        if pressed_keys[K_SPACE] and on_platform_rect is not None:
+        if (pressed_keys[K_w] or pressed_keys[K_UP]) and on_platform_rect is not None:
             self.acc.y = -7  # Up
 
         # Gravity
@@ -171,10 +171,12 @@ class CementPlatform(Platform):
 def main():
     plat1 = NormalPlatform(MAP_WIDTH, 30, 0, HEIGHT - 30)
     plat2 = CementPlatform(300, 20, 0, HEIGHT - 100)
-    player = Player(50, 50)
+    player = Player(50, 500)
     shadow = Shadow(50, 50, 100, player)
     player.platforms.append(plat1)
     player.platforms.append(plat2)
+
+    playerhealth = 3
 
     all_sprites = pygame.sprite.Group()
     all_sprites.add(plat1)
@@ -199,6 +201,10 @@ def main():
 
         player.physics()
         shadow.track()
+
+        if player.rect.colliderect(shadow.rect):
+            playerhealth -= 1
+            print(playerhealth)
 
         # Camera
         camera_x_offset = min(max(0, player.pos.x - WIDTH / 2),
