@@ -5,6 +5,7 @@ from collections import deque
 from typing import NamedTuple
 
 pygame.init()
+pygame.mixer.init
 
 Vec = pygame.math.Vector2  # 2 for two dimensional
 
@@ -13,6 +14,11 @@ WIDTH = 800  # Screen width
 ACC = 0.5  # Impact of user's keyboard on the acceleration
 FRIC_X = -0.09  # Air resistance
 FRIC_Y = -0.01
+
+jumpsound = pygame.mixer.Sound("images\Jump.mp3")
+hitsound = pygame.mixer.Sound("images\HitSound.mp3")
+GameOverSound = pygame.mixer.Sound("images\GameOver.mp3")
+GameWinSound = pygame.mixer.Sound("images\LevelCompleteSound.mp3")
 
 class Images(pygame.sprite.Sprite):
     _img_cache = {}
@@ -133,6 +139,7 @@ class Player(Images):
             and on_platform_rect is not None
         ):
             self.acc.y = -7  # Up
+            pygame.mixer.Sound.play(jumpsound)
 
         # Gravity
         if on_platform_rect is None:
@@ -335,6 +342,7 @@ class Level:
             self.player.is_in_void()
             or self.player.rect.colliderect(self.shadow.rect)
         ):
+            pygame.mixer.Sound.play(hitsound)
             self.reset()
             self.health -= 1
         # Check if player won
@@ -378,8 +386,10 @@ class Game:
             clock.tick(FPS)
 
             if level.health <= 0:
+                pygame.mixxer.Sound.play(GameOverSound)
                 return False
             if level.won:
+                pygame.mixer.Sound.play(GameWinSound)
                 return True
 
     def reset_caption(self):
