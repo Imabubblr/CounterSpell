@@ -9,7 +9,6 @@ Vec = pygame.math.Vector2  # 2 for two dimensional
 
 HEIGHT = 600  # Screen height
 WIDTH = 800  # Screen width
-MAP_WIDTH = 2000  # Map width
 ACC = 0.5  # Impact of user's keyboard on the acceleration
 FRIC_X = -0.09  # Air resistance
 FRIC_Y = -0.01
@@ -61,15 +60,19 @@ class TextElements():
         screen.blit(self.text, self.rect)
 
 class Player(Images):
-    def __init__(self, x, y):
+    def __init__(self, x, y, map_width):
         self.width = 30
         self.height = 75
+        self.map_width = map_width
         super().__init__("images/Player.png", x, y, self.width, self.height)
         self.platforms = []
 
         self.pos = Vec((x, y))
         self.vel = Vec(0, 0)
         self.acc = Vec(0, 0)
+
+        self.right_boundary = self.map_width - self.width / 2
+        self.left_boundary = self.width / 2
 
     def blit(self, background_surface, camera_x_offset):
         self.rect.midbottom = self.pos
@@ -124,10 +127,9 @@ class Player(Images):
         self.vel += self.acc
         self.pos += self.vel + 0.5 * self.acc
 
-        if self.pos.x > MAP_WIDTH - self.width / 2:
-            self.pos.x = MAP_WIDTH - self.width / 2
-        if self.pos.x < self.width / 2:
-            self.pos.x = self.width / 2
+        self.pos.x = max(
+            min(self.pos.x, self.right_boundary), self.left_boundary
+        )
 
         if on_platform_rect is not None:
             # Prevent from going down on a platform
@@ -168,21 +170,48 @@ class CementPlatform(Platform):
     def __init__(self, width, height, x, y):
         super().__init__("images/Cement.png", x, y, width, height)
 
-def main():
-    plat1 = NormalPlatform(MAP_WIDTH, 30, 0, HEIGHT - 30)
-    plat2 = CementPlatform(300, 20, 0, HEIGHT - 100)
-    player = Player(50, 50)
-    shadow = Shadow(50, 50, 100, player)
-    player.platforms.append(plat1)
-    player.platforms.append(plat2)
+class IcePlatform(Platform):
+    resistance_factor = 0.75
 
-    all_sprites = pygame.sprite.Group()
-    all_sprites.add(plat1)
-    all_sprites.add(plat2)
-    all_sprites.add(player)
-    all_sprites.add(shadow)
+    def __init__(self, width, height, x, y):
+        # TODO change the image
+        super().__init__("images/Cement.png", x, y, width, height)
 
-    pygame.display.set_caption("Game")
+class Level:
+    def __init__(
+        self,
+        name: str,
+        platforms,
+        map_width: int,
+        spawn_x: int, spawn_y: int,
+        shadow_countdown: int,
+    ):
+        self.name = name
+        self.platforms = platforms
+        self.map_width = map_width
+        self.player = Player(spawn_x, spawn_y, map_width)
+        # The shadow is initially outside screen.
+        self.shadow = Shadow(-100, 0, shadow_countdown, self.player)
+
+        self.player.platforms.extend(platforms)
+        self.all_sprites = pygame.sprite.Group()
+        for platform in platforms:
+            self.all_sprites.add(platform)
+        self.all_sprites.add(self.player)
+        self.all_sprites.add(self.shadow)
+
+    def tick(self, background_surface):
+        # Subroutine loops
+        self.player.physics()
+        self.shadow.track()
+        # Camera
+        camera_x_offset = min(max(0, self.player.pos.x - WIDTH / 2),
+                              self.map_width - WIDTH)
+        for entity in self.all_sprites:
+            entity.blit(background_surface, camera_x_offset)
+
+def main(level: Level):
+    pygame.display.set_caption(f"Game - {level.name}")
     background_surface = pygame.display.set_mode((WIDTH, HEIGHT))
     clock = pygame.time.Clock()
     FPS = 60
@@ -196,19 +225,20 @@ def main():
                 sys.exit()
 
         background_surface.blit(Map.image, Map.rect)
-
-        player.physics()
-        shadow.track()
-
-        # Camera
-        camera_x_offset = min(max(0, player.pos.x - WIDTH / 2),
-                              MAP_WIDTH - WIDTH)
-
-        for entity in all_sprites:
-            entity.blit(background_surface, camera_x_offset)
-
+        level.tick(background_surface)
         pygame.display.update()
         clock.tick(FPS)
+
+TEST_LEVEL = Level(
+    "Test level",
+    (
+        NormalPlatform(2000, 30, 0, HEIGHT - 30),
+        IcePlatform(300, 20, 0, HEIGHT - 100),
+    ),
+    2000,
+    50, 0,
+    100,
+)
 
 def Menu():
     pygame.font.init()
@@ -232,7 +262,7 @@ def Menu():
 
         pressed_keys = pygame.key.get_pressed()
         if pressed_keys[K_SPACE]:
-            main()
+            main(TEST_LEVEL)
             break
 
         background_surface.blit(Map.image, Map.rect)
