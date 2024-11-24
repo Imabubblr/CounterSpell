@@ -542,34 +542,6 @@ class Game:
             pygame.display.update()
             clock.tick(FPS)
 
-TEST_LEVEL = Level(
-    "Test level",
-    (
-        NormalPlatform(300, 30, 0, HEIGHT - 30),
-        CementPlatform(300, 30, 300, HEIGHT - 30),
-        NormalPlatform(300, 30, 000, HEIGHT - 330),
-        NormalPlatform(200, 30, 790, HEIGHT - 130),
-        IcePlatform(100, 30, 1200, HEIGHT - 230),
-        IcePlatform(200, 30, 750, HEIGHT - 330),
-        CementPlatform(200, 30, 550, HEIGHT - 330),
-        IcePlatform(200, 30, 1200, HEIGHT - 430),
-        IcePlatform(200, 30, 1650, HEIGHT - 530),
-        CementPlatform(300, 30, 2500, HEIGHT - 30),
-        CementPlatform(300, 30, 2950, HEIGHT - 130),
-        CementPlatform(300, 30, 3400, HEIGHT - 230),
-        CementPlatform(300, 30, 3850, HEIGHT - 330),
-        NormalPlatform(400, 30, 4600, HEIGHT - 30),
-    ),
-    5000,
-    50, 450,
-    4900, HEIGHT - 120,
-    100,
-    3,
-    (
-        (Key(100, HEIGHT - 380), Door(4820, HEIGHT - 180)),
-    )
-)
-
 Level_1 = Level(
     "LEVEL 1",
     (
@@ -680,6 +652,4 @@ Level_5 = Level(
         (Key(100, HEIGHT - 380), Door(4820, HEIGHT - 180)),
     )
 )
-Game((
-    Level_1, Level_2, Level_3,Level_4, Level_5
-)).main()
+Game((Level_1, Level_2, Level_3, Level_4, Level_5)).main()
