@@ -168,9 +168,6 @@ class Player(Images):
         if max_x is not None:
             self.pos[0] = min(max_x, self.pos[0])
 
-    def check_collision_with_shadow(self, shadow_rect) -> bool:
-        return self.rect.colliderect(shadow_rect)
-
     def is_in_void(self) -> bool:
         return self.pos.y > HEIGHT
 
@@ -262,6 +259,11 @@ class Door(Images):
         if not self.unlocked:
             super().blit(background_surface, camera_x_offset)
 
+class Goal(Images):
+    def __init__(self, x, y):
+        # TODO change image
+        super().__init__("images/ClimbRope.png", x, y, 50, 50)
+
 class Level:
     def __init__(
         self,
@@ -269,6 +271,7 @@ class Level:
         platforms,
         map_width: int,
         spawn_x: int, spawn_y: int,
+        goal_x: int, goal_y: int,
         shadow_countdown: int,
         health: int,
         key_door_pairs,
@@ -279,16 +282,18 @@ class Level:
         self.player = Player(spawn_x, spawn_y, map_width)
         # The shadow is initially outside screen.
         self.shadow = Shadow(-100, 0, shadow_countdown, self.player)
+        self.goal = Goal(goal_x, goal_y)
         self.health = self.initial_health = health
         self.key_door_pairs = key_door_pairs
+        self.dirty = False
+        self.won = False
 
         self.player.obstacles.extend(platforms)
         self.player.obstacles.extend(door for _, door in key_door_pairs)
         self.all_sprites = pygame.sprite.Group()
         for platform in platforms:
             self.all_sprites.add(platform)
-        self.all_sprites.add(self.player)
-        self.all_sprites.add(self.shadow)
+        self.all_sprites.add(self.player, self.shadow, self.goal)
         self.add_keys_and_doors()
 
     def add_keys_and_doors(self):
@@ -297,6 +302,8 @@ class Level:
 
     def hard_reset(self):
         self.reset()
+        self.won = False
+        self.dirty = False
         self.health = self.initial_health
 
     def reset(self):
@@ -327,34 +334,105 @@ class Level:
         # Check if player is dead
         if (
             self.player.is_in_void()
-            or self.player.check_collision_with_shadow(self.shadow.rect)
+            or self.player.rect.colliderect(self.shadow.rect)
         ):
             self.reset()
             self.health -= 1
+        # Check if player won
+        if self.player.rect.colliderect(self.goal.rect):
+            self.won = True
 
-def main(level: Level):
-    pygame.display.set_caption(f"Game - {level.name}")
-    background_surface = pygame.display.set_mode((WIDTH, HEIGHT))
-    clock = pygame.time.Clock()
-    FPS = 60
+class Game:
+    def __init__(self, levels):
+        self.levels = levels
+        self.level_id = 0
+        self.title = "GAME NAME"
 
-    Map = Images('images/GameScreen.png', 0, 0, 800, 600)
-
-    while True:
-
-        for event in pygame.event.get():
-            if event.type == QUIT:
-                pygame.quit()
-                sys.exit()
-
-        background_surface.blit(Map.image, Map.rect)
-        level.tick(background_surface)
-        pygame.display.update()
-        clock.tick(FPS)
-
-        if level.health <= 0:
+    def run_level(self, level: Level):
+        if level.dirty:
             level.hard_reset()
-            break
+        level.dirty = True
+        pygame.display.set_caption(
+            f"{self.title} - Level {self.level_id + 1}. {level.name}"
+        )
+        background_surface = pygame.display.set_mode((WIDTH, HEIGHT))
+        clock = pygame.time.Clock()
+        FPS = 60
+
+        Map = Images('images/GameScreen.png', 0, 0, 800, 600)
+
+        while True:
+
+            for event in pygame.event.get():
+                if event.type == QUIT:
+                    pygame.quit()
+                    sys.exit()
+
+            background_surface.blit(Map.image, Map.rect)
+            level.tick(background_surface)
+            pygame.display.update()
+            clock.tick(FPS)
+
+            if level.health <= 0:
+                return False
+            if level.won:
+                return True
+
+    def reset_caption(self):
+        pygame.display.set_caption(self.title)
+
+    def victory_screen(self):
+        print("You won!")
+        # TODO
+
+    def hard_reset(self):
+        self.reset_caption()
+        self.level_id = 0
+
+    def main(self):
+        pygame.font.init()
+        self.reset_caption()
+        background_surface = pygame.display.set_mode((WIDTH, HEIGHT))
+
+        clock = pygame.time.Clock()
+        FPS = 60
+
+        Map = Images('images/MenuScreen.png', 0, 0, 800, 600)
+        playbutton = TextElements('images/Bauhaus93.ttf', 40, (255,255,255),"Press Space to Play",400,250)
+        NameGame = TextElements('images/Bauhaus93.ttf', 60, (255,255,255),self.title,400,150)
+        rectangle = pygame.Rect(350, 300, 600, 60)
+        rectangle.center = (400, 250)
+
+        self.level_id = 0
+
+        while True:
+            for event in pygame.event.get():
+                if event.type == QUIT:
+                    pygame.quit()
+                    sys.exit()
+
+            pressed_keys = pygame.key.get_pressed()
+            if pressed_keys[K_SPACE]:
+                while True:
+                    won = self.run_level(self.levels[self.level_id])
+                    if won:
+                        self.level_id += 1
+                        if self.level_id == len(self.levels):
+                            # Beat the game!
+                            self.victory_screen()
+                            self.hard_reset()
+                            break
+                    else:
+                        self.hard_reset()
+                        break
+
+            background_surface.blit(Map.image, Map.rect)
+            pygame.draw.rect(background_surface,(0,0,0),rectangle)
+            background_surface.blit(playbutton.text, playbutton.rect)
+            background_surface.blit(NameGame.text, NameGame.rect)
+
+            pygame.display.update()
+            clock.tick(FPS)
 
 TEST_LEVEL = Level(
     "Test level",
@@ -364,47 +442,14 @@ TEST_LEVEL = Level(
     ),
     2000,
     50, 0,
+    1400, HEIGHT - 120,
     100,
     3,
     (
-        (Key(1000, HEIGHT - 100), Door(1300, HEIGHT - 180)),
+        (Key(1000, HEIGHT - 100), Door(1200, HEIGHT - 180)),
     )
 )
 
-def reset_caption():
-    pygame.display.set_caption("Game")
-
-def Menu():
-    pygame.font.init()
-    reset_caption()
-    background_surface = pygame.display.set_mode((WIDTH, HEIGHT))
-
-    clock = pygame.time.Clock()
-    FPS = 60
-
-    Map = Images('images/MenuScreen.png', 0, 0, 800, 600)
-    playbutton = TextElements('images/Bauhaus93.ttf',40, (255,255,255),"Press Space to Play",400,250)
-    NameGame = TextElements('images/Bauhaus93.ttf',60, (255,255,255),"Game Name",400,150)
-    rectangle = pygame.Rect(350, 300,600,60)
-    rectangle.center = (400,250)
-
-    while True:
-        for event in pygame.event.get():
-            if event.type == QUIT:
-                pygame.quit()
-                sys.exit()
-
-        pressed_keys = pygame.key.get_pressed()
-        if pressed_keys[K_SPACE]:
-            main(TEST_LEVEL)
-            reset_caption()
-
-        background_surface.blit(Map.image, Map.rect)
-        pygame.draw.rect(background_surface,(0,0,0),rectangle)
-        background_surface.blit(playbutton.text, playbutton.rect)
-        background_surface.blit(NameGame.text, NameGame.rect)
-
-        pygame.display.update()
-        clock.tick(FPS)
-
-Menu()
+Game((
+    TEST_LEVEL,
+)).main()
