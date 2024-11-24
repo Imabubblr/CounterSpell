@@ -94,7 +94,6 @@ class Player(Images):
         self.obstacles = []
         self.turning_left = False
         self.initial_shoot_cd = 120
-        self.shoot_cd = 30
 
         self.right_boundary = self.map_width - self.width / 2
         self.left_boundary = self.width / 2
@@ -108,33 +107,39 @@ class Player(Images):
         self.pos = Vec(self.initial_pos)
         self.vel = Vec(0, 0)
         self.acc = Vec(0, 0)
+        self.shoot_cd = 30
 
     def blit(self, background_surface, camera_x_offset):
         self.rect.midbottom = self.pos
         return super().blit(background_surface, camera_x_offset)
 
     def physics(self):
+        EPSILON_Y = self.vel.y
         on_platform_rect = None
         min_x = max_x = min_y = None
         platform_resistance_factor = 1.0
-        hitbox = self.rect.move(0, 1)
-        hitbox2 = self.rect.move(0, -1)
+        hitbox = self.rect
         for obstacle in self.obstacles:
             plat_rect: pygame.Rect = obstacle.rect
             if hitbox.colliderect(plat_rect):
                 # Collision from top
-                if plat_rect.clipline(hitbox.bottomleft, hitbox.bottomright):
+                if (
+                    hitbox.bottom - EPSILON_Y - 1 < plat_rect.top and
+                    plat_rect.clipline(hitbox.bottomleft, hitbox.bottomright)
+                ):
                     on_platform_rect = plat_rect
                     platform_resistance_factor = obstacle.resistance_factor
                 # Collision from bottom
-                elif plat_rect.clipline(hitbox2.topleft, hitbox2.topright):
-                    min_y = plat_rect.bottom
+                elif (
+                    hitbox.top - EPSILON_Y + 1 > plat_rect.bottom and
+                    plat_rect.clipline(hitbox.topleft, hitbox.topright)
+                ):
+                    min_y = plat_rect.bottom + self.height
                 # Collision from left/right
-                else:
-                    if plat_rect.clipline(hitbox.topright, hitbox.bottomright):
-                        max_x = plat_rect.left - self.width / 2
-                    if plat_rect.clipline(hitbox.topleft, hitbox.bottomleft):
-                        min_x = plat_rect.right + self.width / 2
+                elif plat_rect.clipline(hitbox.topright, hitbox.bottomright):
+                    max_x = plat_rect.left - self.width / 2
+                elif plat_rect.clipline(hitbox.topleft, hitbox.bottomleft):
+                    min_x = plat_rect.right + self.width / 2
 
         self.acc = Vec(0, 0)
         pressed_keys = pygame.key.get_pressed()
