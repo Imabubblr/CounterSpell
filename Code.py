@@ -69,7 +69,7 @@ class Player(Images):
         self.height = 75
         self.map_width = map_width
         super().__init__("images/Player.png", x, y, self.width, self.height)
-        self.platforms = []
+        self.obstacles = []
 
         self.right_boundary = self.map_width - self.width / 2
         self.left_boundary = self.width / 2
@@ -91,13 +91,13 @@ class Player(Images):
         min_x = max_x = None
         platform_resistance_factor = 1.0
         hitbox = self.rect.move(0, 1)
-        for platform in self.platforms:
-            plat_rect: pygame.Rect = platform.rect
+        for obstacle in self.obstacles:
+            plat_rect: pygame.Rect = obstacle.rect
             if hitbox.colliderect(plat_rect):
                 # Collision from top
                 if plat_rect.collidepoint(hitbox.midbottom):
                     on_platform_rect = plat_rect
-                    platform_resistance_factor = platform.resistance_factor
+                    platform_resistance_factor = obstacle.resistance_factor
                 # Collision from left/right
                 if plat_rect.collidepoint(hitbox.midright):
                     max_x = plat_rect.x - self.width / 2
@@ -199,6 +199,38 @@ class IcePlatform(Platform):
         # TODO change the image
         super().__init__("images/Cement.png", x, y, width, height)
 
+class Key(Images):
+    def __init__(self, x, y):
+        super().__init__("images/Key.png", x, y, 30, 30)
+        self.used = False
+
+    def reset(self):
+        self.used = False
+
+    def on_picked_up(self):
+        self.used = True
+
+    def blit(self, background_surface, camera_x_offset):
+        if not self.used:
+            super().blit(background_surface, camera_x_offset)
+
+class Door(Images):
+    resistance_factor = 1.0
+
+    def __init__(self, x, y):
+        super().__init__("images/ClimbRope.png", x, y, 20, 100)
+        self.unlocked = False
+
+    def reset(self):
+        self.unlocked = False
+
+    def on_unlocked(self):
+        self.unlocked = True
+
+    def blit(self, background_surface, camera_x_offset):
+        if not self.unlocked:
+            super().blit(background_surface, camera_x_offset)
+
 class Level:
     def __init__(
         self,
@@ -208,6 +240,7 @@ class Level:
         spawn_x: int, spawn_y: int,
         shadow_countdown: int,
         health: int,
+        key_door_pairs,
     ):
         self.name = name
         self.platforms = platforms
@@ -216,13 +249,20 @@ class Level:
         # The shadow is initially outside screen.
         self.shadow = Shadow(-100, 0, shadow_countdown, self.player)
         self.health = self.initial_health = health
+        self.key_door_pairs = key_door_pairs
 
-        self.player.platforms.extend(platforms)
+        self.player.obstacles.extend(platforms)
+        self.player.obstacles.extend(door for _, door in key_door_pairs)
         self.all_sprites = pygame.sprite.Group()
         for platform in platforms:
             self.all_sprites.add(platform)
         self.all_sprites.add(self.player)
         self.all_sprites.add(self.shadow)
+        self.add_keys_and_doors()
+
+    def add_keys_and_doors(self):
+        for key, door in self.key_door_pairs:
+            self.all_sprites.add(key, door)
 
     def hard_reset(self):
         self.reset()
@@ -231,6 +271,12 @@ class Level:
     def reset(self):
         self.player.reset()
         self.shadow.reset()
+        self.add_keys_and_doors()
+        for key, door in self.key_door_pairs:
+            if key.used:
+                self.player.obstacles.append(door)
+                key.reset()
+                door.reset()
 
     def tick(self, background_surface):
         # Subroutine loops
@@ -241,6 +287,12 @@ class Level:
                               self.map_width - WIDTH)
         for entity in self.all_sprites:
             entity.blit(background_surface, camera_x_offset)
+        # Check if key is picked up
+        for key, door in self.key_door_pairs:
+            if not key.used and self.player.rect.colliderect(key.rect):
+                key.on_picked_up()
+                door.on_unlocked()
+                self.player.obstacles.remove(door)
         # Check if player is dead
         if (
             self.player.is_in_void()
@@ -282,6 +334,9 @@ TEST_LEVEL = Level(
     50, 0,
     100,
     3,
+    (
+        (Key(1000, HEIGHT - 100), Door(1300, HEIGHT - 100)),
+    )
 )
 
 def reset_caption():
