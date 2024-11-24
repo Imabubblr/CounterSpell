@@ -215,7 +215,7 @@ class Level:
         self.player = Player(spawn_x, spawn_y, map_width)
         # The shadow is initially outside screen.
         self.shadow = Shadow(-100, 0, shadow_countdown, self.player)
-        self.health = health
+        self.health = self.initial_health = health
 
         self.player.platforms.extend(platforms)
         self.all_sprites = pygame.sprite.Group()
@@ -224,11 +224,13 @@ class Level:
         self.all_sprites.add(self.player)
         self.all_sprites.add(self.shadow)
 
+    def hard_reset(self):
+        self.reset()
+        self.health = self.initial_health
+
     def reset(self):
         self.player.reset()
         self.shadow.reset()
-        self.health -= 1
-        print(self.health)
 
     def tick(self, background_surface):
         # Subroutine loops
@@ -239,12 +241,13 @@ class Level:
                               self.map_width - WIDTH)
         for entity in self.all_sprites:
             entity.blit(background_surface, camera_x_offset)
-        # Check player's collision with the shadow
-        if self.player.check_collision_with_shadow(self.shadow.rect):
+        # Check if player is dead
+        if (
+            self.player.is_in_void()
+            or self.player.check_collision_with_shadow(self.shadow.rect)
+        ):
             self.reset()
-        # Check if player is in the void
-        if self.player.is_in_void():
-            self.reset()
+            self.health -= 1
 
 def main(level: Level):
     pygame.display.set_caption(f"Game - {level.name}")
@@ -265,6 +268,10 @@ def main(level: Level):
         pygame.display.update()
         clock.tick(FPS)
 
+        if level.health <= 0:
+            level.hard_reset()
+            break
+
 TEST_LEVEL = Level(
     "Test level",
     (
@@ -277,9 +284,12 @@ TEST_LEVEL = Level(
     3,
 )
 
+def reset_caption():
+    pygame.display.set_caption("Game")
+
 def Menu():
     pygame.font.init()
-    pygame.display.set_caption("Game")
+    reset_caption()
     background_surface = pygame.display.set_mode((WIDTH, HEIGHT))
 
     clock = pygame.time.Clock()
@@ -300,7 +310,7 @@ def Menu():
         pressed_keys = pygame.key.get_pressed()
         if pressed_keys[K_SPACE]:
             main(TEST_LEVEL)
-            break
+            reset_caption()
 
         background_surface.blit(Map.image, Map.rect)
         pygame.draw.rect(background_surface,(0,0,0),rectangle)
