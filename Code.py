@@ -110,7 +110,10 @@ class Player(Images):
             self.acc.x = -ACC
         if pressed_keys[K_RIGHT] or pressed_keys[K_d]:
             self.acc.x = ACC
-        if (pressed_keys[K_w] or pressed_keys[K_UP]) and on_platform_rect is not None:
+        if (
+            (pressed_keys[K_w] or pressed_keys[K_UP] or pressed_keys[K_SPACE])
+            and on_platform_rect is not None
+        ):
             self.acc.y = -7  # Up
 
         # Gravity
@@ -149,6 +152,9 @@ class Player(Images):
 
     def check_collision_with_shadow(self, shadow_rect) -> bool:
         return self.rect.colliderect(shadow_rect)
+
+    def is_in_void(self) -> bool:
+        return self.pos.y > HEIGHT
 
 class Shadow(Images):
     def __init__(self, x, y, countdown: int, player: Player):
@@ -201,7 +207,7 @@ class Level:
         map_width: int,
         spawn_x: int, spawn_y: int,
         shadow_countdown: int,
-        health: int
+        health: int,
     ):
         self.name = name
         self.platforms = platforms
@@ -221,6 +227,8 @@ class Level:
     def reset(self):
         self.player.reset()
         self.shadow.reset()
+        self.health -= 1
+        print(self.health)
 
     def tick(self, background_surface):
         # Subroutine loops
@@ -233,8 +241,9 @@ class Level:
             entity.blit(background_surface, camera_x_offset)
         # Check player's collision with the shadow
         if self.player.check_collision_with_shadow(self.shadow.rect):
-            self.health -= 1
-            print(self.health)
+            self.reset()
+        # Check if player is in the void
+        if self.player.is_in_void():
             self.reset()
 
 def main(level: Level):
@@ -259,12 +268,13 @@ def main(level: Level):
 TEST_LEVEL = Level(
     "Test level",
     (
-        NormalPlatform(2000, 30, 0, HEIGHT - 30),
+        NormalPlatform(1500, 30, 0, HEIGHT - 30),
         IcePlatform(300, 20, 0, HEIGHT - 100),
     ),
     2000,
     50, 0,
-    100,3
+    100,
+    3,
 )
 
 def Menu():
