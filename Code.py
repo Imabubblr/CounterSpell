@@ -115,16 +115,20 @@ class Player(Images):
 
     def physics(self):
         on_platform_rect = None
-        min_x = max_x = None
+        min_x = max_x = min_y = None
         platform_resistance_factor = 1.0
         hitbox = self.rect.move(0, 1)
+        hitbox2 = self.rect.move(0, -1)
         for obstacle in self.obstacles:
             plat_rect: pygame.Rect = obstacle.rect
             if hitbox.colliderect(plat_rect):
                 # Collision from top
-                if plat_rect.collidepoint(hitbox.midbottom):
+                if plat_rect.clipline(hitbox.bottomleft, hitbox.bottomright):
                     on_platform_rect = plat_rect
                     platform_resistance_factor = obstacle.resistance_factor
+                # Collision from bottom
+                elif plat_rect.clipline(hitbox2.topleft, hitbox2.topright):
+                    min_y = plat_rect.bottom
                 # Collision from left/right
                 else:
                     if plat_rect.clipline(hitbox.topright, hitbox.bottomright):
@@ -161,11 +165,13 @@ class Player(Images):
             # Prevent from going down on a platform
             self.vel.y = min(0, self.vel.y)
 
-        # Prevent from going left or right if there is obstacle
+        # Prevent from going left, right or up if there is obstacle
         if min_x is not None:
             self.vel.x = max(0, self.vel.x)
         if max_x is not None:
             self.vel.x = min(0, self.vel.x)
+        if min_y is not None:
+            self.vel.y = max(0, self.vel.y)
 
         # Compute resistance
         resistance = Vec(FRIC_X, FRIC_Y)
@@ -187,6 +193,8 @@ class Player(Images):
             self.pos[0] = max(min_x, self.pos[0])
         if max_x is not None:
             self.pos[0] = min(max_x, self.pos[0])
+        if min_y is not None:
+            self.pos[1] = max(min_y, self.pos[1])
 
     def is_in_void(self) -> bool:
         return self.pos.y > HEIGHT
@@ -668,5 +676,6 @@ Level_5 = Level(
     )
 )
 Game((
-    Level_1, Level_2, Level_3, Level_4, Level_5
+    # Level_1,
+    Level_2, Level_3, Level_4, Level_5
 )).main()
