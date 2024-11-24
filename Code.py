@@ -656,7 +656,7 @@ Level_5 = Level(
         CementPlatform(300, 30, 2900, HEIGHT - 110),
         CementPlatform(300, 30, 3350, HEIGHT - 190),
         CementPlatform(300, 30, 3800, HEIGHT - 270),
-        NormalPlatform(400, 30, 4600, HEIGHT - 30),
+        NormalPlatform(600, 30, 4500, HEIGHT - 30),
     ),
     5000,
     50, 450,
