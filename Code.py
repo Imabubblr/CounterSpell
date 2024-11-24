@@ -1,6 +1,7 @@
 import pygame
 from pygame.locals import *
 import sys
+from collections import deque
 
 pygame.init()
 Vec = pygame.math.Vector2  # 2 for two dimensional
@@ -13,34 +14,49 @@ ACC = 0.5  # Impact of user's keyboard on the acceleration
 FRIC_X = -0.09  # Air resistance
 FRIC_Y = -0.01
 
-class Player(pygame.sprite.Sprite):
+class Images(pygame.sprite.Sprite): 
+    def __init__(self, picture, Xpos, Ypos, width, height):
+        pygame.sprite.Sprite.__init__(self)
+        self.image = pygame.image.load(picture)
+        self.image = pygame.transform.scale(self.image, (width, height))
+        self.rect = self.image.get_rect(topleft = (Xpos, Ypos))
+
+    def blit(self, background_surface: pygame.Surface):
+        background_surface.blit(self.image, self.rect)
+
+class Player(Images):
     def __init__(self, x, y):
-        super().__init__()
         self.width = 30
-        self.height = 30
-        self.surf = pygame.Surface((self.width, self.height))
-        self.surf.fill((128, 255, 40))
-        self.rect = self.surf.get_rect(center = (x, y))
+        self.height = 75
+        super().__init__("images/Player.png", x, y, self.width, self.height)
         self.platforms = []
 
-        self.pos = Vec((10, 385))
+        self.pos = Vec((x, y))
         self.vel = Vec(0, 0)
         self.acc = Vec(0, 0)
 
+    def blit(self, background_surface):
+        self.rect.midbottom = self.pos
+        return super().blit(background_surface)
+
     def physics(self):
         on_platform_rect = None
+        min_x = max_x = None
         cement_factor = 1.0
         hitbox = self.rect.move(0, 1)
         for platform in self.platforms:
-            plat_rect = platform.rect
-            if (
-                on_platform_rect is None
-                and hitbox.colliderect(plat_rect)
-                and hitbox[1] <= plat_rect[1]
-            ):
-                on_platform_rect = plat_rect
-                if isinstance(platform, CementPlatform):
-                    cement_factor = platform.resistance_factor
+            plat_rect: pygame.Rect = platform.rect
+            if hitbox.colliderect(plat_rect):
+                # Collision from top
+                if plat_rect.collidepoint(hitbox.midbottom):
+                    on_platform_rect = plat_rect
+                    if isinstance(platform, CementPlatform):
+                        cement_factor = platform.resistance_factor
+                # Collision from left/right
+                if plat_rect.collidepoint(hitbox.midright):
+                    max_x = plat_rect.x - self.width / 2
+                if plat_rect.collidepoint(hitbox.midleft):
+                    min_x = plat_rect.x + self.width / 2
 
         self.acc = Vec(0, 0)
         pressed_keys = pygame.key.get_pressed()
@@ -58,6 +74,12 @@ class Player(pygame.sprite.Sprite):
             # Prevent from going down on a platform
             self.vel.y = min(0, self.vel.y)
 
+        # Prevent from going left or right if there is obstacle
+        if min_x is not None:
+            self.vel.x = max(0, self.vel.x)
+        if max_x is not None:
+            self.vel.x = min(0, self.vel.x)
+
         # Compute resistance
         resistance = Vec(FRIC_X, FRIC_Y)
         resistance.x *= cement_factor
@@ -67,42 +89,55 @@ class Player(pygame.sprite.Sprite):
         self.vel += self.acc
         self.pos += self.vel + 0.5 * self.acc
 
-        if self.pos.x > WIDTH:
-            self.pos.x = 0
-        if self.pos.x < 0:
-            self.pos.x = WIDTH
+        if self.pos.x > WIDTH - self.width / 2:
+            self.pos.x = WIDTH - self.width / 2
+        if self.pos.x < self.width / 2:
+            self.pos.x = self.width / 2
 
         if on_platform_rect is not None:
             # Prevent from going down on a platform
             self.pos[1] = min(on_platform_rect[1], self.pos[1])
+        if min_x is not None:
+            self.pos[0] = max(min_x, self.pos[0])
+        if max_x is not None:
+            self.pos[0] = min(max_x, self.pos[0])
 
-    def update_ui(self):
-        self.rect.midbottom = self.pos
+class Shadow(Images):
+    def __init__(self, x, y, countdown: int, player: Player):
+        self.player = player
+        super().__init__("images/Enemy.png", x, y, player.width, player.height)
+        self.past_pos = deque()
+        self.countdown = countdown
 
-class Platform(pygame.sprite.Sprite):
-    def __init__(self, width, height, pos_x, pos_y):
-        super().__init__()
-        self.surf = pygame.Surface((width, height))
-        self.surf.fill((255, 0, 0))
-        self.rect = self.surf.get_rect(center = (pos_x, pos_y))
+    def track(self):
+        if self.countdown > 0:
+            self.countdown -= 1
+        self.past_pos.append(self.player.pos.copy())
 
-    def update_ui(self):
-        pass
+    def blit(self, background_surface):
+        if self.countdown <= 0:
+            self.rect.midbottom = self.past_pos.popleft()
+        return super().blit(background_surface)
+
+class Platform(Images):
+    pass
+
+class NormalPlatform(Platform):
+    def __init__(self, width, height, x, y):
+        # TODO change the image
+        super().__init__("images/Cement.png", x, y, width, height)
 
 class CementPlatform(Platform):
     resistance_factor = 1.5
 
-class Images(pygame.sprite.Sprite): 
-    def __init__(self, picture, Xpos, Ypos, width, height):
-        pygame.sprite.Sprite.__init__(self)
-        self.image = pygame.image.load(picture).convert_alpha()
-        self.image= pygame.transform.scale(self.image, (width, height))
-        self.rect = self.image.get_rect(topleft = (Xpos, Ypos))
+    def __init__(self, width, height, x, y):
+        super().__init__("images/Cement.png", x, y, width, height)
 
 def main():
-    plat1 = Platform(WIDTH, 30, WIDTH * 0.5, HEIGHT - 15)
+    plat1 = NormalPlatform(WIDTH, 30, 0, HEIGHT - 30)
     plat2 = CementPlatform(WIDTH / 2, 50, WIDTH * 0.75, HEIGHT - 70)
     player = Player(50, 50)
+    shadow = Shadow(50, 50, 100, player)
     player.platforms.append(plat1)
     player.platforms.append(plat2)
 
@@ -110,14 +145,15 @@ def main():
     all_sprites.add(plat1)
     all_sprites.add(plat2)
     all_sprites.add(player)
+    all_sprites.add(shadow)
 
     pygame.display.set_caption("Game")
     background_surface = pygame.display.set_mode((WIDTH, HEIGHT))
     clock = pygame.time.Clock()
     FPS = 60
 
-    Map = Images('Assets\MenuScreen.png', 0, 0, 800, 600)
-    
+    Map = Images('images/MenuScreen.png', 0, 0, 800, 600)
+
     while True:
         for event in pygame.event.get():
             if event.type == QUIT:
@@ -127,10 +163,10 @@ def main():
         background_surface.blit(Map.image, Map.rect)
 
         player.physics()
+        shadow.track()
 
         for entity in all_sprites:
-            entity.update_ui()
-            background_surface.blit(entity.surf, entity.rect)
+            entity.blit(background_surface)
 
         pygame.display.update()
         clock.tick(FPS)
