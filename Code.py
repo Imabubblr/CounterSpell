@@ -212,20 +212,20 @@ class Platform(ImageHorizontalTile):
 class NormalPlatform(Platform):
     def __init__(self, width, height, x, y):
         # TODO change the image
-        super().__init__("images/Cement.png", x, y, width, height)
+        super().__init__("images/Platform.png", x, y, width, height)
 
 class CementPlatform(Platform):
-    resistance_factor = 1.5
+    resistance_factor = 3
 
     def __init__(self, width, height, x, y):
         super().__init__("images/Cement.png", x, y, width, height)
 
 class IcePlatform(Platform):
-    resistance_factor = 0.75
+    resistance_factor = 0.4
 
     def __init__(self, width, height, x, y):
         # TODO change the image
-        super().__init__("images/Cement.png", x, y, width, height)
+        super().__init__("images/Ice.png", x, y, width, height)
 
 class Key(Images):
     def __init__(self, x, y):
@@ -261,8 +261,7 @@ class Door(Images):
 
 class Goal(Images):
     def __init__(self, x, y):
-        # TODO change image
-        super().__init__("images/ClimbRope.png", x, y, 50, 50)
+        super().__init__("images/GoalFlag.png", x, y, 50, 75)
 
 class Level:
     def __init__(
@@ -362,6 +361,9 @@ class Game:
         Map = Images('images/GameScreen.png', 0, 0, 800, 600)
 
         while True:
+            
+            LivesRemaining = TextElements('images/Bauhaus93.ttf', 30, (255,255,255),f"LIVES: {level.health}", 70, 50)
+            CurrentLevel = TextElements('images/Bauhaus93.ttf', 30, (255,255,255),f"{level.name}", 730, 50)
 
             for event in pygame.event.get():
                 if event.type == QUIT:
@@ -369,6 +371,8 @@ class Game:
                     sys.exit()
 
             background_surface.blit(Map.image, Map.rect)
+            background_surface.blit(LivesRemaining.text, LivesRemaining.rect)
+            background_surface.blit(CurrentLevel.text, CurrentLevel.rect)
             level.tick(background_surface)
             pygame.display.update()
             clock.tick(FPS)
@@ -479,19 +483,141 @@ class Game:
 TEST_LEVEL = Level(
     "Test level",
     (
-        NormalPlatform(1500, 30, 0, HEIGHT - 30),
-        IcePlatform(300, 20, 0, HEIGHT - 100),
+        NormalPlatform(300, 30, 0, HEIGHT - 30),
+        CementPlatform(300, 30, 300, HEIGHT - 30),
+        NormalPlatform(300, 30, 000, HEIGHT - 330),
+        NormalPlatform(200, 30, 790, HEIGHT - 130),
+        IcePlatform(100, 30, 1200, HEIGHT - 230),
+        IcePlatform(200, 30, 750, HEIGHT - 330),
+        CementPlatform(200, 30, 550, HEIGHT - 330),
+        IcePlatform(200, 30, 1200, HEIGHT - 430),
+        IcePlatform(200, 30, 1650, HEIGHT - 530),
+        CementPlatform(300, 30, 2500, HEIGHT - 30),
+        CementPlatform(300, 30, 2950, HEIGHT - 130),
+        CementPlatform(300, 30, 3400, HEIGHT - 230),
+        CementPlatform(300, 30, 3850, HEIGHT - 330),
+        NormalPlatform(400, 30, 4600, HEIGHT - 30),
     ),
-    2000,
-    50, 0,
-    1400, HEIGHT - 120,
+    5000,
+    50, 450,
+    4900, HEIGHT - 120,
     100,
     3,
     (
-        (Key(1000, HEIGHT - 100), Door(1200, HEIGHT - 180)),
+        (Key(100, HEIGHT - 380), Door(4820, HEIGHT - 180)),
     )
 )
 
+Level_1 = Level(
+    "LEVEL 1",
+    (
+        NormalPlatform(1500, 30, 0, HEIGHT - 30),
+        NormalPlatform(700, 30, 1800, HEIGHT - 30),
+        NormalPlatform(400, 30, 2800, HEIGHT - 30),
+        NormalPlatform(75,100,400,HEIGHT - 130),
+        NormalPlatform(75,100,1000,HEIGHT - 130),
+        NormalPlatform(75,200,1200,HEIGHT - 230),
+        NormalPlatform(75,100,2425,HEIGHT - 130),
+        NormalPlatform(75,100,2800,HEIGHT - 130),
+    ),
+    3200,
+    50, 450,
+    3100, HEIGHT - 120,
+    100,
+    3,
+    ()
+)
+
+Level_2 = Level(
+    "LEVEL 2",
+    (
+        NormalPlatform(300, 30, 0, HEIGHT - 30),
+        CementPlatform(500, 30, 300, HEIGHT - 30),
+        CementPlatform(475, 30, 1100, HEIGHT - 30),
+        CementPlatform(75, 100, 1300, HEIGHT - 130),
+        CementPlatform(75, 200, 1500, HEIGHT - 230),
+        CementPlatform(200, 30, 1700, HEIGHT - 300),
+        CementPlatform(600, 30, 2400, HEIGHT - 30),
+    ),
+    3000,
+    50, 450,
+    2900, HEIGHT - 120,
+    100,
+    3,
+    ()
+)
+
+Level_3 = Level(
+    "LEVEL 3",
+    (
+        NormalPlatform(300, 30, 0, HEIGHT - 30),
+        IcePlatform(300, 30, 300, HEIGHT - 30),
+        IcePlatform(500, 30, 1000, HEIGHT - 30),
+        IcePlatform(500, 30, 1750, HEIGHT - 130),
+        IcePlatform(500, 30, 1000, HEIGHT - 230),
+        IcePlatform(500, 30, 1750, HEIGHT - 330),
+        NormalPlatform(350, 30, 2850, HEIGHT - 30),
+    ),
+    3200,
+    50, 450,
+    3100, HEIGHT - 120,
+    100,
+    3,
+    ()
+)
+
+Level_4 = Level(
+    "LEVEL 4",
+    (
+        NormalPlatform(500, 30, 0, HEIGHT - 30),
+        NormalPlatform(300, 30, 0, HEIGHT - 330),
+        NormalPlatform(300, 30, 800, HEIGHT - 30),
+        NormalPlatform(300, 30, 1300, HEIGHT - 130),
+        NormalPlatform(300, 30, 1800, HEIGHT - 230),
+        NormalPlatform(300, 30, 2300, HEIGHT - 330),
+        NormalPlatform(300, 30, 1800, HEIGHT - 430),
+        NormalPlatform(300, 30, 1300, HEIGHT - 430),
+        NormalPlatform(300, 30, 800, HEIGHT - 430),
+        NormalPlatform(200, 30, 500, HEIGHT - 330),
+        NormalPlatform(350, 30, 2850, HEIGHT - 30),
+    ),
+    3200,
+    50, 450,
+    3100, HEIGHT - 120,
+    100,
+    3,
+    (
+        (Key(100, HEIGHT - 380), Door(3000, HEIGHT - 180)),
+    )
+)
+
+Level_5 = Level(
+    "LEVEL 5",
+    (
+        NormalPlatform(300, 30, 0, HEIGHT - 30),
+        CementPlatform(300, 30, 300, HEIGHT - 30),
+        NormalPlatform(300, 30, 000, HEIGHT - 330),
+        NormalPlatform(200, 30, 790, HEIGHT - 130),
+        IcePlatform(100, 30, 1200, HEIGHT - 230),
+        IcePlatform(200, 30, 750, HEIGHT - 330),
+        CementPlatform(200, 30, 550, HEIGHT - 330),
+        IcePlatform(200, 30, 1200, HEIGHT - 430),
+        IcePlatform(200, 30, 1650, HEIGHT - 530),
+        CementPlatform(300, 30, 2500, HEIGHT - 30),
+        CementPlatform(300, 30, 2950, HEIGHT - 130),
+        CementPlatform(300, 30, 3400, HEIGHT - 230),
+        CementPlatform(300, 30, 3850, HEIGHT - 330),
+        NormalPlatform(400, 30, 4600, HEIGHT - 30),
+    ),
+    5000,
+    50, 450,
+    4900, HEIGHT - 120,
+    100,
+    3,
+    (
+        (Key(100, HEIGHT - 380), Door(4820, HEIGHT - 180)),
+    )
+)
 Game((
-    TEST_LEVEL,
+    Level_1, Level_2, Level_3, Level_4, Level_5
 )).main()
