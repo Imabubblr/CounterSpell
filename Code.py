@@ -1,9 +1,22 @@
 import pygame
 from pygame.locals import *
 import sys
+import os
 from collections import deque
 from typing import NamedTuple
 from itertools import chain
+
+RELEASING = False  # set to True when releasing with PyInstaller
+
+def resource_path(relative_path):
+    if not RELEASING:
+        return relative_path
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+    return os.path.join(base_path, relative_path)
 
 pygame.init()
 pygame.mixer.init()
@@ -18,10 +31,10 @@ FRIC_Y = -0.01
 BULLET_FREEZE = 60  # frames
 BULLET_SPEED = 12  # pixels/frame
 
-jumpsound = pygame.mixer.Sound("images/Jump.mp3")
-hitsound = pygame.mixer.Sound("images/HitSound.mp3")
-GameOverSound = pygame.mixer.Sound("images/GameOver.mp3")
-GameWinSound = pygame.mixer.Sound("images/LevelCompleteSound.mp3")
+jumpsound = pygame.mixer.Sound(resource_path("images/Jump.mp3"))
+hitsound = pygame.mixer.Sound(resource_path("images/HitSound.mp3"))
+GameOverSound = pygame.mixer.Sound(resource_path("images/GameOver.mp3"))
+GameWinSound = pygame.mixer.Sound(resource_path("images/LevelCompleteSound.mp3"))
 
 class Images(pygame.sprite.Sprite):
     _img_cache = {}
@@ -35,6 +48,7 @@ class Images(pygame.sprite.Sprite):
         self.rect = self.image.get_rect(topleft=self.initial_pos)
 
     def reset_texture(self, picture):
+        picture = resource_path(picture)
         cache_key = (picture, self.image_size)
         if cache_key in self._my_cache:
             self.image = self._my_cache[cache_key]
@@ -53,7 +67,7 @@ class Images(pygame.sprite.Sprite):
 class ImageHorizontalTile(pygame.sprite.Sprite):
     def __init__(self, picture, x, y, width, height):
         super().__init__()
-        img = pygame.image.load(picture)
+        img = pygame.image.load(resource_path(picture))
         self.image = pygame.transform.scale_by(img, height / img.get_height())
         self.rect = pygame.Rect(x, y, width, height)
         self.img_width = self.image.get_width()
@@ -76,7 +90,7 @@ class TextElements():
         self.xpos = xpos
         self.ypos = ypos
 
-        self.font = pygame.font.Font(font, size)
+        self.font = pygame.font.Font(resource_path(font), size)
         self.text = self.font.render(self.words, True, colour)
         self.rect = self.text.get_rect(center=(xpos, ypos))
 
