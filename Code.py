@@ -2,6 +2,7 @@ import pygame
 from pygame.locals import *
 import sys
 from collections import deque
+from typing import NamedTuple
 
 pygame.init()
 
@@ -14,12 +15,24 @@ FRIC_X = -0.09  # Air resistance
 FRIC_Y = -0.01
 
 class Images(pygame.sprite.Sprite):
+    _img_cache = {}
+
     def __init__(self, picture, Xpos, Ypos, width, height):
         pygame.sprite.Sprite.__init__(self)
-        self.image = pygame.image.load(picture)
-        self.image = pygame.transform.scale(self.image, (width, height))
+        self.image_size = (width, height)
+        self._my_cache = self._img_cache.setdefault(type(self), {})
+        self.reset_texture(picture)
         self.initial_pos = (Xpos, Ypos)
         self.rect = self.image.get_rect(topleft=self.initial_pos)
+
+    def reset_texture(self, picture):
+        cache_key = (picture, self.image_size)
+        if cache_key in self._my_cache:
+            self.image = self._my_cache[cache_key]
+        else:
+            self._my_cache[cache_key] = self.image = pygame.transform.scale(
+                pygame.image.load(picture), self.image_size
+            )
 
     def reset(self):
         self.rect.topleft = self.initial_pos
@@ -69,7 +82,8 @@ class Player(Images):
         self.height = 75
         self.map_width = map_width
         super().__init__("images/Player.png", x, y, self.width, self.height)
-        self.platforms = []
+        self.obstacles = []
+        self.turning_left = False
 
         self.right_boundary = self.map_width - self.width / 2
         self.left_boundary = self.width / 2
@@ -91,13 +105,13 @@ class Player(Images):
         min_x = max_x = None
         platform_resistance_factor = 1.0
         hitbox = self.rect.move(0, 1)
-        for platform in self.platforms:
-            plat_rect: pygame.Rect = platform.rect
+        for obstacle in self.obstacles:
+            plat_rect: pygame.Rect = obstacle.rect
             if hitbox.colliderect(plat_rect):
                 # Collision from top
                 if plat_rect.collidepoint(hitbox.midbottom):
                     on_platform_rect = plat_rect
-                    platform_resistance_factor = platform.resistance_factor
+                    platform_resistance_factor = obstacle.resistance_factor
                 # Collision from left/right
                 if plat_rect.collidepoint(hitbox.midright):
                     max_x = plat_rect.x - self.width / 2
@@ -108,12 +122,12 @@ class Player(Images):
         pressed_keys = pygame.key.get_pressed()
         if pressed_keys[K_LEFT] or pressed_keys[K_a]:
             self.acc.x = -ACC
-            self.image = pygame.image.load('images/PlayerLeft.png')
-            self.image = pygame.transform.scale(self.image, (30, 70))
+            self.turning_left = True
+            self.reset_texture('images/PlayerLeft.png')
         if pressed_keys[K_RIGHT] or pressed_keys[K_d]:
             self.acc.x = ACC
-            self.image = pygame.image.load('images/Player.png')
-            self.image = pygame.transform.scale(self.image, (30, 70))
+            self.turning_left = False
+            self.reset_texture('images/Player.png')
         if (
             (pressed_keys[K_w] or pressed_keys[K_UP] or pressed_keys[K_SPACE])
             and on_platform_rect is not None
@@ -160,26 +174,39 @@ class Player(Images):
     def is_in_void(self) -> bool:
         return self.pos.y > HEIGHT
 
+class MovementRecord(NamedTuple):
+    pos: Vec
+    left: bool
+
 class Shadow(Images):
     def __init__(self, x, y, countdown: int, player: Player):
         self.player = player
         super().__init__("images/Enemy.png", x, y, player.width, player.height)
         self.initial_countdown = countdown
         self.reset()
+        self.turning_left = False
 
     def reset(self):
         super().reset()
-        self.past_pos = deque()
+        self.past_movements = deque()
         self.countdown = self.initial_countdown
 
     def track(self):
         if self.countdown > 0:
             self.countdown -= 1
-        self.past_pos.append(self.player.pos.copy())
+        self.past_movements.append(MovementRecord(
+            self.player.pos.copy(),
+            self.player.turning_left
+        ))
 
     def blit(self, background_surface, camera_x_offset):
         if self.countdown <= 0:
-            self.rect.midbottom = self.past_pos.popleft()
+            record: MovementRecord = self.past_movements.popleft()
+            self.rect.midbottom = record.pos
+            if record.left:
+                self.reset_texture("images/EnemyLeft.png")
+            else:
+                self.reset_texture("images/Enemy.png")
         return super().blit(background_surface, camera_x_offset)
 
 class Platform(ImageHorizontalTile):
@@ -203,6 +230,38 @@ class IcePlatform(Platform):
         # TODO change the image
         super().__init__("images/Cement.png", x, y, width, height)
 
+class Key(Images):
+    def __init__(self, x, y):
+        super().__init__("images/Key.png", x, y, 30, 30)
+        self.used = False
+
+    def reset(self):
+        self.used = False
+
+    def on_picked_up(self):
+        self.used = True
+
+    def blit(self, background_surface, camera_x_offset):
+        if not self.used:
+            super().blit(background_surface, camera_x_offset)
+
+class Door(Images):
+    resistance_factor = 1.0
+
+    def __init__(self, x, y):
+        super().__init__("images/LockedDoor.png", x, y, 150, 150)
+        self.unlocked = False
+
+    def reset(self):
+        self.unlocked = False
+
+    def on_unlocked(self):
+        self.unlocked = True
+
+    def blit(self, background_surface, camera_x_offset):
+        if not self.unlocked:
+            super().blit(background_surface, camera_x_offset)
+
 class Level:
     def __init__(
         self,
@@ -212,6 +271,7 @@ class Level:
         spawn_x: int, spawn_y: int,
         shadow_countdown: int,
         health: int,
+        key_door_pairs,
     ):
         self.name = name
         self.platforms = platforms
@@ -219,20 +279,35 @@ class Level:
         self.player = Player(spawn_x, spawn_y, map_width)
         # The shadow is initially outside screen.
         self.shadow = Shadow(-100, 0, shadow_countdown, self.player)
-        self.health = health
+        self.health = self.initial_health = health
+        self.key_door_pairs = key_door_pairs
 
-        self.player.platforms.extend(platforms)
+        self.player.obstacles.extend(platforms)
+        self.player.obstacles.extend(door for _, door in key_door_pairs)
         self.all_sprites = pygame.sprite.Group()
         for platform in platforms:
             self.all_sprites.add(platform)
         self.all_sprites.add(self.player)
         self.all_sprites.add(self.shadow)
+        self.add_keys_and_doors()
+
+    def add_keys_and_doors(self):
+        for key, door in self.key_door_pairs:
+            self.all_sprites.add(key, door)
+
+    def hard_reset(self):
+        self.reset()
+        self.health = self.initial_health
 
     def reset(self):
         self.player.reset()
         self.shadow.reset()
-        self.health -= 1
-        print(self.health)
+        self.add_keys_and_doors()
+        for key, door in self.key_door_pairs:
+            if key.used:
+                self.player.obstacles.append(door)
+                key.reset()
+                door.reset()
 
     def tick(self, background_surface):
         # Subroutine loops
@@ -243,12 +318,19 @@ class Level:
                               self.map_width - WIDTH)
         for entity in self.all_sprites:
             entity.blit(background_surface, camera_x_offset)
-        # Check player's collision with the shadow
-        if self.player.check_collision_with_shadow(self.shadow.rect):
+        # Check if key is picked up
+        for key, door in self.key_door_pairs:
+            if not key.used and self.player.rect.colliderect(key.rect):
+                key.on_picked_up()
+                door.on_unlocked()
+                self.player.obstacles.remove(door)
+        # Check if player is dead
+        if (
+            self.player.is_in_void()
+            or self.player.check_collision_with_shadow(self.shadow.rect)
+        ):
             self.reset()
-        # Check if player is in the void
-        if self.player.is_in_void():
-            self.reset()
+            self.health -= 1
 
 def main(level: Level):
     pygame.display.set_caption(f"Game - {level.name}")
@@ -270,6 +352,10 @@ def main(level: Level):
         pygame.display.update()
         clock.tick(FPS)
 
+        if level.health <= 0:
+            level.hard_reset()
+            break
+
 TEST_LEVEL = Level(
     "Test level",
     (
@@ -280,11 +366,17 @@ TEST_LEVEL = Level(
     50, 0,
     100,
     3,
+    (
+        (Key(1000, HEIGHT - 100), Door(1300, HEIGHT - 180)),
+    )
 )
+
+def reset_caption():
+    pygame.display.set_caption("Game")
 
 def Menu():
     pygame.font.init()
-    pygame.display.set_caption("Game")
+    reset_caption()
     background_surface = pygame.display.set_mode((WIDTH, HEIGHT))
 
     clock = pygame.time.Clock()
@@ -305,7 +397,7 @@ def Menu():
         pressed_keys = pygame.key.get_pressed()
         if pressed_keys[K_SPACE]:
             main(TEST_LEVEL)
-            break
+            reset_caption()
 
         background_surface.blit(Map.image, Map.rect)
         pygame.draw.rect(background_surface,(0,0,0),rectangle)
