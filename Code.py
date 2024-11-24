@@ -315,4 +315,70 @@ def Menu():
         pygame.display.update()
         clock.tick(FPS)
 
+def Win():
+    pygame.font.init()
+    pygame.display.set_caption("Game")
+    background_surface = pygame.display.set_mode((WIDTH, HEIGHT))
+
+    clock = pygame.time.Clock()
+    FPS = 60
+
+    Map = Images('images/MenuScreen.png', 0, 0, 800, 600)
+    playbutton = TextElements('images/Bauhaus93.ttf',40, (255,255,255),"Press Space to Replay",400,250)
+    NameGame = TextElements('images/Bauhaus93.ttf',60, (255,255,255),"You Win!!",400,150)
+    rectangle = pygame.Rect(350, 300,600,60)
+    rectangle.center = (400,250)
+
+    while True:
+        for event in pygame.event.get():
+            if event.type == QUIT:
+                pygame.quit()
+                sys.exit()
+
+        pressed_keys = pygame.key.get_pressed()
+        if pressed_keys[K_SPACE]:
+            main(TEST_LEVEL)
+            break
+
+        background_surface.blit(Map.image, Map.rect)
+        pygame.draw.rect(background_surface,(0,0,0),rectangle)
+        background_surface.blit(playbutton.text, playbutton.rect)
+        background_surface.blit(NameGame.text, NameGame.rect)
+
+        pygame.display.update()
+        clock.tick(FPS)
+
+def GameOver():
+    pygame.font.init()
+    pygame.display.set_caption("Game")
+    background_surface = pygame.display.set_mode((WIDTH, HEIGHT))
+
+    clock = pygame.time.Clock()
+    FPS = 60
+
+    Map = Images('images/MenuScreen.png', 0, 0, 800, 600)
+    playbutton = TextElements('images/Bauhaus93.ttf',40, (255,255,255),"Press Space to Replay",400,250)
+    NameGame = TextElements('images/Bauhaus93.ttf',60, (255,255,255),"You Lose",400,150)
+    rectangle = pygame.Rect(350, 300,600,60)
+    rectangle.center = (400,250)
+
+    while True:
+        for event in pygame.event.get():
+            if event.type == QUIT:
+                pygame.quit()
+                sys.exit()
+
+        pressed_keys = pygame.key.get_pressed()
+        if pressed_keys[K_SPACE]:
+            main(TEST_LEVEL)
+            break
+
+        background_surface.blit(Map.image, Map.rect)
+        pygame.draw.rect(background_surface,(0,0,0),rectangle)
+        background_surface.blit(playbutton.text, playbutton.rect)
+        background_surface.blit(NameGame.text, NameGame.rect)
+
+        pygame.display.update()
+        clock.tick(FPS)
+
 Menu()
