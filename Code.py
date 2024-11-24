@@ -454,7 +454,7 @@ class Game:
         FPS = 60
         Map = Images('images/MenuScreen.png', 0, 0, 800, 600)
         playbutton = TextElements('images/Bauhaus93.ttf',40, (255,255,255),"Press Space to Replay",400,250)
-        NameGame = TextElements('images/Bauhaus93.ttf',60, (255,255,255),"You Win!!",400,150)
+        NameGame = TextElements('images/Bauhaus93.ttf',60, (0,255,0),"You Win!!",400,150)
         rectangle = pygame.Rect(350, 300,600,60)
         rectangle.center = (400,250)
         while True:
@@ -479,7 +479,7 @@ class Game:
         FPS = 60
         Map = Images('images/MenuScreen.png', 0, 0, 800, 600)
         playbutton = TextElements('images/Bauhaus93.ttf',40, (255,255,255),"Press Space to Replay",400,250)
-        NameGame = TextElements('images/Bauhaus93.ttf',60, (255,255,255),"You Lose",400,150)
+        NameGame = TextElements('images/Bauhaus93.ttf',60, (255,0,0),"You Lose",400,150)
         rectangle = pygame.Rect(350, 300,600,60)
         rectangle.center = (400,250)
         while True:
