@@ -8,8 +8,7 @@ Vec = pygame.math.Vector2  # 2 for two dimensional
 
 HEIGHT = 600  # Screen height
 WIDTH = 800  # Screen width
-HEIGHT = 600  # Screen height
-WIDTH = 800  # Screen width
+MAP_WIDTH = 2000  # Map width
 ACC = 0.5  # Impact of user's keyboard on the acceleration
 FRIC_X = -0.09  # Air resistance
 FRIC_Y = -0.01
@@ -21,8 +20,9 @@ class Images(pygame.sprite.Sprite):
         self.image = pygame.transform.scale(self.image, (width, height))
         self.rect = self.image.get_rect(topleft = (Xpos, Ypos))
 
-    def blit(self, background_surface: pygame.Surface):
-        background_surface.blit(self.image, self.rect)
+    def blit(self, background_surface: pygame.Surface, camera_x_offset):
+        new_rect = self.rect.move(-camera_x_offset, 0)
+        background_surface.blit(self.image, new_rect)
 
 class Player(Images):
     def __init__(self, x, y):
@@ -35,9 +35,9 @@ class Player(Images):
         self.vel = Vec(0, 0)
         self.acc = Vec(0, 0)
 
-    def blit(self, background_surface):
+    def blit(self, background_surface, camera_x_offset):
         self.rect.midbottom = self.pos
-        return super().blit(background_surface)
+        return super().blit(background_surface, camera_x_offset)
 
     def physics(self):
         on_platform_rect = None
@@ -89,8 +89,8 @@ class Player(Images):
         self.vel += self.acc
         self.pos += self.vel + 0.5 * self.acc
 
-        if self.pos.x > WIDTH - self.width / 2:
-            self.pos.x = WIDTH - self.width / 2
+        if self.pos.x > MAP_WIDTH - self.width / 2:
+            self.pos.x = MAP_WIDTH - self.width / 2
         if self.pos.x < self.width / 2:
             self.pos.x = self.width / 2
 
@@ -114,10 +114,10 @@ class Shadow(Images):
             self.countdown -= 1
         self.past_pos.append(self.player.pos.copy())
 
-    def blit(self, background_surface):
+    def blit(self, background_surface, camera_x_offset):
         if self.countdown <= 0:
             self.rect.midbottom = self.past_pos.popleft()
-        return super().blit(background_surface)
+        return super().blit(background_surface, camera_x_offset)
 
 class Platform(Images):
     pass
@@ -134,8 +134,8 @@ class CementPlatform(Platform):
         super().__init__("images/Cement.png", x, y, width, height)
 
 def main():
-    plat1 = NormalPlatform(WIDTH, 30, 0, HEIGHT - 30)
-    plat2 = CementPlatform(WIDTH / 2, 50, WIDTH * 0.75, HEIGHT - 70)
+    plat1 = NormalPlatform(MAP_WIDTH, 30, 0, HEIGHT - 30)
+    plat2 = CementPlatform(300, 20, 0, HEIGHT - 100)
     player = Player(50, 50)
     shadow = Shadow(50, 50, 100, player)
     player.platforms.append(plat1)
@@ -165,8 +165,12 @@ def main():
         player.physics()
         shadow.track()
 
+        # Camera
+        camera_x_offset = min(max(0, player.pos.x - WIDTH / 2),
+                              MAP_WIDTH - WIDTH)
+
         for entity in all_sprites:
-            entity.blit(background_surface)
+            entity.blit(background_surface, camera_x_offset)
 
         pygame.display.update()
         clock.tick(FPS)
