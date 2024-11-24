@@ -108,8 +108,12 @@ class Player(Images):
         pressed_keys = pygame.key.get_pressed()
         if pressed_keys[K_LEFT] or pressed_keys[K_a]:
             self.acc.x = -ACC
+            self.image = pygame.image.load('images/PlayerLeft.png')
+            self.image = pygame.transform.scale(self.image, (30, 70))
         if pressed_keys[K_RIGHT] or pressed_keys[K_d]:
             self.acc.x = ACC
+            self.image = pygame.image.load('images/Player.png')
+            self.image = pygame.transform.scale(self.image, (30, 70))
         if (
             (pressed_keys[K_w] or pressed_keys[K_UP] or pressed_keys[K_SPACE])
             and on_platform_rect is not None
@@ -255,6 +259,7 @@ def main(level: Level):
     Map = Images('images/GameScreen.png', 0, 0, 800, 600)
 
     while True:
+
         for event in pygame.event.get():
             if event.type == QUIT:
                 pygame.quit()
